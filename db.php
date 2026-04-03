@@ -87,7 +87,27 @@ function initializeDatabase(PDO $pdo): void
         )'
     );
 
+    ensureTableColumn($pdo, 'meter_readings', 'payment_method', 'TEXT');
+    ensureTableColumn($pdo, 'meter_readings', 'payment_note', 'TEXT');
+
     seedDefaults($pdo);
+}
+
+function ensureTableColumn(PDO $pdo, string $table, string $column, string $definition): void
+{
+    $stmt = $pdo->query('PRAGMA table_info(' . $table . ')');
+    $exists = false;
+
+    foreach ($stmt->fetchAll() as $col) {
+        if (($col['name'] ?? '') === $column) {
+            $exists = true;
+            break;
+        }
+    }
+
+    if (!$exists) {
+        $pdo->exec(sprintf('ALTER TABLE %s ADD COLUMN %s %s', $table, $column, $definition));
+    }
 }
 
 function seedDefaults(PDO $pdo): void

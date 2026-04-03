@@ -1,7 +1,7 @@
     </main>
 
     <footer class="app-footer">
-      Coppy Right DSA ( DENTA SWADAYA AIR ) • Powerd
+      Copyright DSA ( DENTA SWADAYA AIR ) • Powered By
       <a href="https://remek8787.github.io/portofolio/" target="_blank" rel="noopener">Ananta Satriya</a>
     </footer>
   </div>

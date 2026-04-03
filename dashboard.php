@@ -11,6 +11,25 @@ $pdo = db();
 $customerCount = (int)$pdo->query('SELECT COUNT(*) FROM customers')->fetchColumn();
 $unpaidCount = (int)$pdo->query("SELECT COUNT(*) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
 $unpaidTotal = (int)$pdo->query("SELECT COALESCE(SUM(amount_total),0) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
+$unpaidCustomerCount = (int)$pdo->query("SELECT COUNT(DISTINCT customer_id) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
+$paidCustomerCount = max(0, $customerCount - $unpaidCustomerCount);
+
+if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
+    $stmt = $pdo->prepare("SELECT
+            COUNT(*) AS total_rows,
+            SUM(CASE WHEN status = 'paid' THEN 1 ELSE 0 END) AS paid_rows,
+            SUM(CASE WHEN status = 'unpaid' THEN 1 ELSE 0 END) AS unpaid_rows,
+            COALESCE(SUM(CASE WHEN status = 'unpaid' THEN amount_total ELSE 0 END), 0) AS unpaid_amount
+        FROM meter_readings WHERE customer_id = :customer_id");
+    $stmt->execute([':customer_id' => (int)$user['customer_id']]);
+    $mine = $stmt->fetch() ?: [];
+
+    $customerCount = (int)($mine['total_rows'] ?? 0);
+    $paidCustomerCount = (int)($mine['paid_rows'] ?? 0);
+    $unpaidCustomerCount = (int)($mine['unpaid_rows'] ?? 0);
+    $unpaidCount = $unpaidCustomerCount;
+    $unpaidTotal = (int)($mine['unpaid_amount'] ?? 0);
+}
 
 $recentBills = [];
 if ($user['role'] === 'customer') {
@@ -26,18 +45,23 @@ if ($user['role'] === 'customer') {
 require __DIR__ . '/includes/header.php';
 ?>
 
-<div class="grid md:grid-cols-3 gap-4 mb-4">
+<div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
   <div class="bg-white rounded-xl shadow p-4">
-    <p class="text-sm text-slate-500">Jumlah Pelanggan</p>
+    <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Total Tagihan Saya' : 'Semua Pelanggan' ?></p>
     <p class="text-3xl font-bold"><?= $customerCount ?></p>
   </div>
   <div class="bg-white rounded-xl shadow p-4">
-    <p class="text-sm text-slate-500">Tagihan Belum Lunas</p>
-    <p class="text-3xl font-bold"><?= $unpaidCount ?></p>
+    <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Tagihan Lunas Saya' : 'Pelanggan Lunas' ?></p>
+    <p class="text-3xl font-bold text-emerald-600"><?= $paidCustomerCount ?></p>
+  </div>
+  <div class="bg-white rounded-xl shadow p-4">
+    <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Tagihan Belum Lunas Saya' : 'Pelanggan Belum Lunas' ?></p>
+    <p class="text-3xl font-bold text-amber-600"><?= $unpaidCustomerCount ?></p>
   </div>
   <div class="bg-white rounded-xl shadow p-4">
     <p class="text-sm text-slate-500">Total Piutang</p>
     <p class="text-3xl font-bold"><?= e(rupiah($unpaidTotal)) ?></p>
+    <div class="text-xs text-slate-500 mt-1">Tagihan belum lunas: <?= $unpaidCount ?></div>
   </div>
 </div>
 

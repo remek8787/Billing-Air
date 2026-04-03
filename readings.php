@@ -9,6 +9,19 @@ $pdo = db();
 $user = currentUser();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = $_POST['action'] ?? 'save_reading';
+
+    if ($action === 'delete_reading') {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $stmt = $pdo->prepare('DELETE FROM meter_readings WHERE id = :id');
+            $stmt->execute([':id' => $id]);
+            flash('success', 'Data meter berhasil dihapus.');
+        }
+        header('Location: readings.php');
+        exit;
+    }
+
     $customerId = (int)($_POST['customer_id'] ?? 0);
     $month = (int)($_POST['period_month'] ?? 0);
     $year = (int)($_POST['period_year'] ?? 0);
@@ -21,12 +34,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     upsertReading($customerId, $month, $year, $meterAkhir, (int)$user['id']);
-    flash('success', 'Input meter berhasil disimpan.');
+    flash('success', 'Input meter berhasil disimpan / diperbarui.');
     header('Location: readings.php');
     exit;
 }
 
 $customers = $pdo->query('SELECT id, name FROM customers ORDER BY name ASC')->fetchAll();
+
+$editId = (int)($_GET['edit'] ?? 0);
+$editReading = null;
+if ($editId > 0) {
+    $stmt = $pdo->prepare('SELECT * FROM meter_readings WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $editId]);
+    $editReading = $stmt->fetch();
+}
 
 $latest = $pdo->query('SELECT mr.*, c.name AS customer_name, u.full_name AS input_name
     FROM meter_readings mr
@@ -35,22 +56,25 @@ $latest = $pdo->query('SELECT mr.*, c.name AS customer_name, u.full_name AS inpu
     ORDER BY mr.period_year DESC, mr.period_month DESC, mr.customer_id ASC
     LIMIT 40')->fetchAll();
 
-$nowMonth = (int)date('n');
-$nowYear = (int)date('Y');
+$nowMonth = $editReading ? (int)$editReading['period_month'] : (int)date('n');
+$nowYear = $editReading ? (int)$editReading['period_year'] : (int)date('Y');
+$selectedCustomerId = $editReading ? (int)$editReading['customer_id'] : 0;
+$meterAkhirValue = $editReading ? (int)$editReading['meter_akhir'] : 0;
 
 require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="grid lg:grid-cols-3 gap-4">
   <section class="bg-white rounded-xl shadow p-4">
-    <h2 class="font-semibold mb-3">Input Meter Bulanan</h2>
+    <h2 class="font-semibold mb-3"><?= $editReading ? 'Edit Input Meter' : 'Input Meter Bulanan' ?></h2>
     <form method="post" class="space-y-3">
+      <input type="hidden" name="action" value="save_reading">
       <div>
         <label class="text-sm">Pelanggan</label>
-        <select name="customer_id" required class="mt-1 w-full border rounded px-3 py-2">
+        <select name="customer_id" required class="mt-1 w-full border rounded px-3 py-2" id="reading_customer_id">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
-            <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></option>
+            <option value="<?= (int)$c['id'] ?>" <?= $selectedCustomerId === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
           <?php endforeach; ?>
         </select>
       </div>
@@ -72,10 +96,15 @@ require __DIR__ . '/includes/header.php';
 
       <div>
         <label class="text-sm">Meter Akhir Bulan Ini</label>
-        <input type="number" min="0" name="meter_akhir" required class="mt-1 w-full border rounded px-3 py-2" placeholder="Contoh: 1250">
+        <input type="number" min="0" name="meter_akhir" required class="mt-1 w-full border rounded px-3 py-2" placeholder="Contoh: 1250" value="<?= $meterAkhirValue > 0 ? $meterAkhirValue : '' ?>">
       </div>
 
-      <button class="bg-slate-900 text-white rounded px-4 py-2">Simpan Input Meter</button>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="bg-slate-900 text-white rounded px-4 py-2"><?= $editReading ? 'Update Meter' : 'Simpan Input Meter' ?></button>
+        <?php if ($editReading): ?>
+          <a class="btn btn-outline-secondary btn-sm" href="readings.php">Batal Edit</a>
+        <?php endif; ?>
+      </div>
     </form>
   </section>
 
@@ -103,6 +132,7 @@ require __DIR__ . '/includes/header.php';
           <th class="py-2 pr-3">Pemakaian</th>
           <th class="py-2 pr-3">Total</th>
           <th class="py-2 pr-3">Input By</th>
+          <th class="py-2 pr-3">Aksi</th>
         </tr>
       </thead>
       <tbody>
@@ -115,14 +145,36 @@ require __DIR__ . '/includes/header.php';
           <td class="py-2 pr-3"><?= (int)$r['usage_m3'] ?> m³</td>
           <td class="py-2 pr-3"><?= e(rupiah((int)$r['amount_total'])) ?></td>
           <td class="py-2 pr-3"><?= e($r['input_name'] ?? '-') ?></td>
+          <td class="py-2 pr-3">
+            <a class="btn btn-sm btn-outline-primary" href="readings.php?edit=<?= (int)$r['id'] ?>">Edit</a>
+            <form method="post" class="inline" onsubmit="return confirm('Hapus data meter ini?')">
+              <input type="hidden" name="action" value="delete_reading">
+              <input type="hidden" name="id" value="<?= (int)$r['id'] ?>">
+              <button class="btn btn-sm btn-outline-danger">Hapus</button>
+            </form>
+          </td>
         </tr>
       <?php endforeach; ?>
       <?php if (!$latest): ?>
-        <tr><td colspan="7" class="py-4 text-slate-500">Belum ada data meter.</td></tr>
+        <tr><td colspan="8" class="py-4 text-slate-500">Belum ada data meter.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
   </div>
 </section>
+
+<script>
+(() => {
+  const select = document.getElementById('reading_customer_id');
+  if (select && window.TomSelect) {
+    new TomSelect(select, {
+      create: false,
+      maxItems: 1,
+      searchField: ['text'],
+      placeholder: 'Pilih / ketik nama pelanggan...'
+    });
+  }
+})();
+</script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>

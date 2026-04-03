@@ -14,16 +14,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $id = (int)($_POST['id'] ?? 0);
 
-    if ($id > 0 && in_array($action, ['mark_paid', 'mark_unpaid'], true)) {
-        if ($action === 'mark_paid') {
-            $stmt = $pdo->prepare('UPDATE meter_readings SET status = "paid", paid_at = :paid_at WHERE id = :id');
-            $stmt->execute([':id' => $id, ':paid_at' => date('Y-m-d H:i:s')]);
-            flash('success', 'Tagihan ditandai lunas.');
-        } else {
-            $stmt = $pdo->prepare('UPDATE meter_readings SET status = "unpaid", paid_at = NULL WHERE id = :id');
-            $stmt->execute([':id' => $id]);
-            flash('success', 'Tagihan dikembalikan ke belum lunas.');
+    if ($id > 0 && $action === 'mark_paid') {
+        $paymentMethod = trim((string)($_POST['payment_method'] ?? 'cash'));
+        $paymentNote = trim((string)($_POST['payment_note'] ?? ''));
+
+        if (!in_array($paymentMethod, ['cash', 'transfer'], true)) {
+            $paymentMethod = 'cash';
         }
+
+        $stmt = $pdo->prepare('UPDATE meter_readings
+            SET status = "paid", paid_at = :paid_at, payment_method = :payment_method, payment_note = :payment_note
+            WHERE id = :id');
+        $stmt->execute([
+            ':id' => $id,
+            ':paid_at' => date('Y-m-d H:i:s'),
+            ':payment_method' => $paymentMethod,
+            ':payment_note' => $paymentNote,
+        ]);
+        flash('success', 'Tagihan ditandai lunas (' . strtoupper($paymentMethod) . ').');
+    }
+
+    if ($id > 0 && $action === 'mark_unpaid') {
+        $stmt = $pdo->prepare('UPDATE meter_readings
+            SET status = "unpaid", paid_at = NULL, payment_method = NULL, payment_note = NULL
+            WHERE id = :id');
+        $stmt->execute([':id' => $id]);
+        flash('success', 'Tagihan dikembalikan ke belum lunas.');
+    }
+
+    if ($id > 0 && $action === 'update_payment') {
+        $paymentMethod = trim((string)($_POST['payment_method'] ?? ''));
+        $paymentNote = trim((string)($_POST['payment_note'] ?? ''));
+
+        if (!in_array($paymentMethod, ['cash', 'transfer'], true)) {
+            flash('error', 'Metode pembayaran harus cash atau transfer.');
+            header('Location: bills.php');
+            exit;
+        }
+
+        $stmt = $pdo->prepare('UPDATE meter_readings
+            SET payment_method = :payment_method, payment_note = :payment_note
+            WHERE id = :id');
+        $stmt->execute([
+            ':id' => $id,
+            ':payment_method' => $paymentMethod,
+            ':payment_note' => $paymentNote,
+        ]);
+        flash('success', 'Metode pembayaran berhasil diperbarui.');
     }
 
     header('Location: bills.php');
@@ -120,6 +157,7 @@ require __DIR__ . '/includes/header.php';
           <th class="py-2 pr-3">Tarif/m³</th>
           <th class="py-2 pr-3">Total</th>
           <th class="py-2 pr-3">Status</th>
+          <th class="py-2 pr-3">Metode Bayar</th>
           <th class="py-2 pr-3">Jatuh Tempo</th>
           <th class="py-2 pr-3">Aksi</th>
         </tr>
@@ -140,30 +178,55 @@ require __DIR__ . '/includes/header.php';
               <?= $bill['status'] === 'paid' ? 'Lunas' : 'Belum Lunas' ?>
             </span>
           </td>
+          <td class="py-2 pr-3">
+            <?php if (!empty($bill['payment_method'])): ?>
+              <span class="badge text-bg-info"><?= e(strtoupper((string)$bill['payment_method'])) ?></span>
+              <?php if (!empty($bill['payment_note'])): ?>
+                <div class="text-xs text-slate-500 mt-1"><?= e((string)$bill['payment_note']) ?></div>
+              <?php endif; ?>
+            <?php else: ?>
+              <span class="text-xs text-slate-500">-</span>
+            <?php endif; ?>
+          </td>
           <td class="py-2 pr-3"><?= e($bill['due_date'] ?: '-') ?></td>
           <td class="py-2 pr-3">
             <?php if ($user['role'] !== 'customer'): ?>
               <?php if ($bill['status'] === 'unpaid'): ?>
-                <form method="post" class="inline">
+                <form method="post" class="space-y-1">
                   <input type="hidden" name="action" value="mark_paid">
                   <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
-                  <button class="px-2 py-1 rounded bg-emerald-100 text-emerald-700">Tandai Lunas</button>
+                  <select name="payment_method" class="border rounded px-2 py-1 text-xs">
+                    <option value="cash">Cash</option>
+                    <option value="transfer">Transfer</option>
+                  </select>
+                  <input name="payment_note" class="border rounded px-2 py-1 text-xs w-36" placeholder="catatan opsional">
+                  <button class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-xs">Tandai Lunas</button>
                 </form>
               <?php else: ?>
+                <form method="post" class="space-y-1 mb-1">
+                  <input type="hidden" name="action" value="update_payment">
+                  <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
+                  <select name="payment_method" class="border rounded px-2 py-1 text-xs">
+                    <option value="cash" <?= ($bill['payment_method'] ?? '') === 'cash' ? 'selected' : '' ?>>Cash</option>
+                    <option value="transfer" <?= ($bill['payment_method'] ?? '') === 'transfer' ? 'selected' : '' ?>>Transfer</option>
+                  </select>
+                  <input name="payment_note" value="<?= e((string)($bill['payment_note'] ?? '')) ?>" class="border rounded px-2 py-1 text-xs w-36" placeholder="catatan opsional">
+                  <button class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">Update Bayar</button>
+                </form>
                 <form method="post" class="inline">
                   <input type="hidden" name="action" value="mark_unpaid">
                   <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
-                  <button class="px-2 py-1 rounded bg-slate-100 text-slate-700">Batalkan Lunas</button>
+                  <button class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs">Batalkan Lunas</button>
                 </form>
               <?php endif; ?>
             <?php else: ?>
-              -
+              <?= !empty($bill['payment_method']) ? e(strtoupper((string)$bill['payment_method'])) : '-' ?>
             <?php endif; ?>
           </td>
         </tr>
       <?php endforeach; ?>
       <?php if (!$bills): ?>
-        <tr><td colspan="11" class="py-4 text-slate-500">Tidak ada tagihan untuk filter ini.</td></tr>
+        <tr><td colspan="12" class="py-4 text-slate-500">Tidak ada tagihan untuk filter ini.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
