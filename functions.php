@@ -29,6 +29,26 @@ function updateSetting(string $key, int $value): void
     $stmt->execute([':key' => $key, ':value' => (string) $value]);
 }
 
+function saveCustomerLoginSecret(int $userId, string $passwordPlain): void
+{
+    $stmt = db()->prepare('INSERT INTO customer_login_secrets(user_id, password_plain, updated_at)
+        VALUES(:user_id, :password_plain, :updated_at)
+        ON CONFLICT(user_id) DO UPDATE SET
+            password_plain = excluded.password_plain,
+            updated_at = excluded.updated_at');
+    $stmt->execute([
+        ':user_id' => $userId,
+        ':password_plain' => $passwordPlain,
+        ':updated_at' => date('Y-m-d H:i:s'),
+    ]);
+}
+
+function defaultCustomerPasswordById(int $customerId): string
+{
+    $digits = str_pad((string)($customerId % 10000), 4, '0', STR_PAD_LEFT);
+    return 'DSA' . $digits;
+}
+
 function flash(string $type, string $message): void
 {
     $_SESSION['flash'] = ['type' => $type, 'message' => $message];

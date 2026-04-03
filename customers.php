@@ -56,8 +56,7 @@ function autoCustomerUsername(PDO $pdo, int $customerId, string $name, string $a
 
 function autoCustomerPassword(int $customerId): string
 {
-    $digits = str_pad((string)($customerId % 10000), 4, '0', STR_PAD_LEFT);
-    return 'DSA' . $digits;
+    return defaultCustomerPasswordById($customerId);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -154,6 +153,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':full_name' => $row['name'],
             ':customer_id' => $customerId,
         ]);
+
+        $newUserId = (int)$pdo->lastInsertId();
+        saveCustomerLoginSecret($newUserId, $password);
 
         flash('success', 'Login pelanggan berhasil dibuat. Username: ' . $username . ' | Password awal: ' . $password);
         header('Location: customers.php');

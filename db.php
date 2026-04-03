@@ -78,6 +78,15 @@ function initializeDatabase(PDO $pdo): void
         )'
     );
 
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS customer_login_secrets (
+            user_id INTEGER PRIMARY KEY,
+            password_plain TEXT NOT NULL,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+        )'
+    );
+
     seedDefaults($pdo);
 }
 

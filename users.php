@@ -25,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($id > 0) {
             if ($password !== '') {
-                $stmt = $pdo->prepare('UPDATE users SET username = :username, full_name = :full_name, role = :role, password_hash = :password_hash WHERE id = :id');
+                $stmt = $pdo->prepare('UPDATE users SET username = :username, full_name = :full_name, role = :role, password_hash = :password_hash WHERE id = :id AND role IN ("admin", "collector")');
                 $stmt->execute([
                     ':username' => $username,
                     ':full_name' => $fullName,
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ':id' => $id,
                 ]);
             } else {
-                $stmt = $pdo->prepare('UPDATE users SET username = :username, full_name = :full_name, role = :role WHERE id = :id');
+                $stmt = $pdo->prepare('UPDATE users SET username = :username, full_name = :full_name, role = :role WHERE id = :id AND role IN ("admin", "collector")');
                 $stmt->execute([
                     ':username' => $username,
                     ':full_name' => $fullName,
@@ -73,12 +73,97 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: users.php');
         exit;
     }
+
+    if ($action === 'update_customer_login') {
+        $id = (int)($_POST['id'] ?? 0);
+        $username = trim($_POST['username'] ?? '');
+        $password = trim((string)($_POST['password'] ?? ''));
+
+        if ($id <= 0 || $username === '') {
+            flash('error', 'ID customer login / username tidak valid.');
+            header('Location: users.php');
+            exit;
+        }
+
+        $target = $pdo->prepare('SELECT id, customer_id FROM users WHERE id = :id AND role = "customer" LIMIT 1');
+        $target->execute([':id' => $id]);
+        $customerUser = $target->fetch();
+
+        if (!$customerUser) {
+            flash('error', 'Akun pelanggan tidak ditemukan.');
+            header('Location: users.php');
+            exit;
+        }
+
+        $check = $pdo->prepare('SELECT id FROM users WHERE username = :username AND id <> :id LIMIT 1');
+        $check->execute([':username' => $username, ':id' => $id]);
+        if ($check->fetch()) {
+            flash('error', 'Username sudah dipakai akun lain.');
+            header('Location: users.php');
+            exit;
+        }
+
+        $pdo->prepare('UPDATE users SET username = :username WHERE id = :id AND role = "customer"')
+            ->execute([':username' => $username, ':id' => $id]);
+
+        if ($password !== '') {
+            if (!preg_match('/^DSA\d{4}$/', $password)) {
+                flash('error', 'Format password pelanggan wajib DSA + 4 digit (contoh DSA0001).');
+                header('Location: users.php');
+                exit;
+            }
+
+            $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id AND role = "customer"')
+                ->execute([':password_hash' => password_hash($password, PASSWORD_DEFAULT), ':id' => $id]);
+            saveCustomerLoginSecret($id, $password);
+
+            flash('success', 'Login pelanggan diperbarui. Password baru: ' . $password);
+        } else {
+            flash('success', 'Username login pelanggan diperbarui.');
+        }
+
+        header('Location: users.php');
+        exit;
+    }
+
+    if ($action === 'reset_customer_password') {
+        $id = (int)($_POST['id'] ?? 0);
+
+        $target = $pdo->prepare('SELECT id, customer_id FROM users WHERE id = :id AND role = "customer" LIMIT 1');
+        $target->execute([':id' => $id]);
+        $customerUser = $target->fetch();
+
+        if (!$customerUser) {
+            flash('error', 'Akun pelanggan tidak ditemukan.');
+            header('Location: users.php');
+            exit;
+        }
+
+        $newPassword = defaultCustomerPasswordById((int)$customerUser['customer_id']);
+        $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id')
+            ->execute([':password_hash' => password_hash($newPassword, PASSWORD_DEFAULT), ':id' => $id]);
+        saveCustomerLoginSecret($id, $newPassword);
+
+        flash('success', 'Password pelanggan di-reset ke: ' . $newPassword);
+        header('Location: users.php');
+        exit;
+    }
+
+    if ($action === 'delete_customer_login') {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $pdo->prepare('DELETE FROM users WHERE id = :id AND role = "customer"')->execute([':id' => $id]);
+            flash('success', 'Login pelanggan dihapus.');
+        }
+        header('Location: users.php');
+        exit;
+    }
 }
 
 $editId = (int)($_GET['edit'] ?? 0);
 $editUser = null;
 if ($editId > 0) {
-    $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id AND role IN ("admin", "collector") LIMIT 1');
     $stmt->execute([':id' => $editId]);
     $editUser = $stmt->fetch();
 }
@@ -86,9 +171,14 @@ if ($editId > 0) {
 $users = $pdo->query('SELECT id, username, full_name, role, created_at FROM users
     WHERE role IN ("admin", "collector") ORDER BY id ASC')->fetchAll();
 
-$customerUsers = $pdo->query('SELECT u.id, u.username, u.full_name, c.name AS customer_name
-    FROM users u LEFT JOIN customers c ON c.id = u.customer_id
-    WHERE u.role = "customer" ORDER BY u.id DESC LIMIT 30')->fetchAll();
+$customerUsers = $pdo->query('SELECT u.id, u.username, u.full_name, u.customer_id,
+        c.name AS customer_name, c.address,
+        cls.password_plain, cls.updated_at AS password_updated_at
+    FROM users u
+    LEFT JOIN customers c ON c.id = u.customer_id
+    LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
+    WHERE u.role = "customer"
+    ORDER BY u.id DESC LIMIT 100')->fetchAll();
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -163,21 +253,60 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <section class="bg-white rounded-xl shadow p-4 mt-4">
-  <h2 class="font-semibold mb-3">Daftar Login Pelanggan (30 Terakhir)</h2>
+  <h2 class="font-semibold mb-3">Login Pelanggan (lihat password + edit + hapus)</h2>
+  <p class="text-xs text-slate-500 mb-3">Password hanya ditampilkan untuk kebutuhan operasional admin. Disarankan ganti berkala.</p>
   <div class="overflow-auto">
     <table class="min-w-full text-sm">
-      <thead><tr class="text-left border-b"><th class="py-2 pr-3">ID</th><th class="py-2 pr-3">Username</th><th class="py-2 pr-3">Nama</th><th class="py-2 pr-3">Pelanggan</th></tr></thead>
+      <thead>
+        <tr class="text-left border-b">
+          <th class="py-2 pr-3">ID</th>
+          <th class="py-2 pr-3">Pelanggan</th>
+          <th class="py-2 pr-3">Username</th>
+          <th class="py-2 pr-3">Password Tercatat</th>
+          <th class="py-2 pr-3">Update</th>
+          <th class="py-2 pr-3">Aksi</th>
+        </tr>
+      </thead>
       <tbody>
       <?php foreach ($customerUsers as $cu): ?>
-        <tr class="border-b">
+        <tr class="border-b align-top">
           <td class="py-2 pr-3"><?= (int)$cu['id'] ?></td>
+          <td class="py-2 pr-3">
+            <div class="font-medium"><?= e($cu['customer_name'] ?? $cu['full_name']) ?></div>
+            <div class="text-xs text-slate-500"><?= e($cu['address'] ?? '-') ?></div>
+          </td>
           <td class="py-2 pr-3"><?= e($cu['username']) ?></td>
-          <td class="py-2 pr-3"><?= e($cu['full_name']) ?></td>
-          <td class="py-2 pr-3"><?= e($cu['customer_name'] ?? '-') ?></td>
+          <td class="py-2 pr-3">
+            <?php if (!empty($cu['password_plain'])): ?>
+              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e($cu['password_plain']) ?></code>
+            <?php else: ?>
+              <span class="text-xs text-slate-500">(Belum tercatat, klik Reset Default)</span>
+            <?php endif; ?>
+          </td>
+          <td class="py-2 pr-3 text-xs text-slate-500"><?= e($cu['password_updated_at'] ?? '-') ?></td>
+          <td class="py-2 pr-3">
+            <form method="post" class="space-y-2 mb-2">
+              <input type="hidden" name="action" value="update_customer_login">
+              <input type="hidden" name="id" value="<?= (int)$cu['id'] ?>">
+              <input name="username" value="<?= e($cu['username']) ?>" class="border rounded px-2 py-1 w-44" required>
+              <input name="password" placeholder="opsional: DSA0001" class="border rounded px-2 py-1 w-40">
+              <button class="px-2 py-1 rounded bg-slate-200">Simpan</button>
+            </form>
+            <form method="post" class="inline" onsubmit="return confirm('Reset password ke default DSA+4 digit?')">
+              <input type="hidden" name="action" value="reset_customer_password">
+              <input type="hidden" name="id" value="<?= (int)$cu['id'] ?>">
+              <button class="px-2 py-1 rounded bg-amber-100 text-amber-800">Reset Default</button>
+            </form>
+            <form method="post" class="inline" onsubmit="return confirm('Hapus login pelanggan ini?')">
+              <input type="hidden" name="action" value="delete_customer_login">
+              <input type="hidden" name="id" value="<?= (int)$cu['id'] ?>">
+              <button class="px-2 py-1 rounded bg-red-100 text-red-700">Hapus</button>
+            </form>
+          </td>
         </tr>
       <?php endforeach; ?>
       <?php if (!$customerUsers): ?>
-        <tr><td colspan="4" class="py-4 text-slate-500">Belum ada login pelanggan.</td></tr>
+        <tr><td colspan="6" class="py-4 text-slate-500">Belum ada login pelanggan.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
