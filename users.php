@@ -217,7 +217,7 @@ require __DIR__ . '/includes/header.php';
   <section class="bg-white rounded-xl shadow p-4 lg:col-span-2">
     <h2 class="font-semibold mb-3">User Admin / Collector</h2>
     <div class="overflow-auto">
-      <table class="min-w-full text-sm">
+      <table class="min-w-full text-sm js-data-table" data-page-size="10">
         <thead>
           <tr class="text-left border-b">
             <th class="py-2 pr-3">ID</th>
@@ -256,7 +256,7 @@ require __DIR__ . '/includes/header.php';
   <h2 class="font-semibold mb-3">Login Pelanggan (lihat password + edit + hapus)</h2>
   <p class="text-xs text-slate-500 mb-3">Password hanya ditampilkan untuk kebutuhan operasional admin. Disarankan ganti berkala.</p>
   <div class="overflow-auto">
-    <table class="min-w-full text-sm">
+    <table class="min-w-full text-sm js-data-table" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">ID</th>
