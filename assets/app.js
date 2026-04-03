@@ -1,5 +1,6 @@
 (() => {
   const THEME_KEY = 'billing_air_theme';
+  const SIDEBAR_KEY = 'billing_air_sidebar';
   const body = document.body;
   const layout = document.getElementById('appLayout');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -18,8 +19,32 @@
     setTheme(saved === 'dark' ? 'dark' : 'light');
   };
 
+  const setSidebarMode = (mode) => {
+    if (!layout) return;
+    layout.classList.remove('sidebar-collapsed');
+    if (mode === 'collapsed') {
+      layout.classList.add('sidebar-collapsed');
+    }
+    localStorage.setItem(SIDEBAR_KEY, mode);
+  };
+
+  const initSidebarMode = () => {
+    const saved = localStorage.getItem(SIDEBAR_KEY);
+    if (window.innerWidth > 992 && saved === 'collapsed') {
+      setSidebarMode('collapsed');
+    }
+  };
+
   sidebarToggle?.addEventListener('click', () => {
-    layout?.classList.toggle('sidebar-open');
+    if (!layout) return;
+
+    if (window.innerWidth <= 992) {
+      layout.classList.toggle('sidebar-open');
+      return;
+    }
+
+    const collapsed = layout.classList.contains('sidebar-collapsed');
+    setSidebarMode(collapsed ? 'expanded' : 'collapsed');
   });
 
   document.addEventListener('click', (event) => {
@@ -112,6 +137,17 @@
     });
   };
 
+  const initLoader = () => {
+    const loader = document.getElementById('appLoader');
+    if (!loader) return;
+    window.addEventListener('load', () => {
+      loader.classList.add('hide');
+      setTimeout(() => loader.remove(), 300);
+    });
+  };
+
   initTheme();
+  initSidebarMode();
   initDataTables();
+  initLoader();
 })();

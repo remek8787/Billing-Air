@@ -205,18 +205,14 @@ require __DIR__ . '/includes/header.php';
     <form method="post" class="space-y-3" id="customer-login-form">
       <input type="hidden" name="action" value="create_customer_login">
       <div>
-        <label class="text-sm">Cari Pelanggan</label>
-        <input id="customer-search" class="mt-1 w-full border rounded px-3 py-2" placeholder="ketik nama/alamat untuk filter dropdown">
-      </div>
-      <div>
-        <label class="text-sm">Pelanggan</label>
+        <label class="text-sm">Pelanggan (ketik langsung untuk cari realtime)</label>
         <select name="customer_id" id="customer_id" required class="mt-1 w-full border rounded px-3 py-2">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
             <option value="<?= (int)$c['id'] ?>"
                     data-name="<?= e((string)$c['name']) ?>"
                     data-address="<?= e((string)($c['address'] ?? '')) ?>">
-              <?= e($c['name']) ?>
+              <?= e($c['name']) ?><?= !empty($c['address']) ? ' — ' . e((string)$c['address']) : '' ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -286,7 +282,6 @@ require __DIR__ . '/includes/header.php';
 
 <script>
 (() => {
-  const searchInput = document.getElementById('customer-search');
   const select = document.getElementById('customer_id');
   const usernameInput = document.getElementById('username');
   const passwordInput = document.getElementById('password');
@@ -310,9 +305,10 @@ require __DIR__ . '/includes/header.php';
     return `DSA${digits}`;
   };
 
-  const applyAuto = () => {
-    const opt = select.options[select.selectedIndex];
-    if (!opt || !opt.value) return;
+  const applyAutoByValue = (value) => {
+    if (!value) return;
+    const opt = Array.from(select.options).find((o) => o.value === String(value));
+    if (!opt) return;
 
     const name = opt.dataset.name || '';
     const address = opt.dataset.address || '';
@@ -322,27 +318,37 @@ require __DIR__ . '/includes/header.php';
     }
 
     if (passwordInput && passwordInput.value.trim() === '') {
-      passwordInput.value = generatePass(opt.value);
+      passwordInput.value = generatePass(value);
     }
   };
 
-  select.addEventListener('change', () => {
-    if (usernameInput) usernameInput.value = '';
-    if (passwordInput) passwordInput.value = '';
-    applyAuto();
-  });
-
-  if (searchInput) {
-    searchInput.addEventListener('input', () => {
-      const q = searchInput.value.trim().toLowerCase();
-      Array.from(select.options).forEach((opt, idx) => {
-        if (idx === 0) {
-          opt.hidden = false;
-          return;
+  if (window.TomSelect) {
+    const ts = new TomSelect(select, {
+      create: false,
+      maxItems: 1,
+      valueField: 'value',
+      labelField: 'text',
+      searchField: ['text'],
+      placeholder: 'Pilih / ketik nama pelanggan...',
+      render: {
+        option: function(data, escape) {
+          return `<div>${escape(data.text)}</div>`;
         }
-        const label = `${opt.dataset.name || ''} ${opt.dataset.address || ''}`.toLowerCase();
-        opt.hidden = q !== '' && !label.includes(q);
-      });
+      },
+      onChange(value) {
+        if (usernameInput) usernameInput.value = '';
+        if (passwordInput) passwordInput.value = '';
+        applyAutoByValue(value);
+      }
+    });
+
+    // initial if pre-selected
+    applyAutoByValue(ts.getValue());
+  } else {
+    select.addEventListener('change', () => {
+      if (usernameInput) usernameInput.value = '';
+      if (passwordInput) passwordInput.value = '';
+      applyAutoByValue(select.value);
     });
   }
 })();

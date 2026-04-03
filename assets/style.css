@@ -1,12 +1,11 @@
 :root {
-  --bg: #f1f5f9;
+  --bg: #eef2ff;
   --card: #ffffff;
   --text: #0f172a;
   --muted: #475569;
   --border: #dbe3ef;
-  --sidebar: #0f172a;
-  --sidebar-text: #cbd5e1;
-  --sidebar-active: #2563eb;
+  --sidebar: linear-gradient(180deg, #0b1635 0%, #08122d 100%);
+  --sidebar-text: #d7e3ff;
 }
 
 body[data-theme="dark"] {
@@ -15,22 +14,44 @@ body[data-theme="dark"] {
   --text: #e2e8f0;
   --muted: #94a3b8;
   --border: #334155;
-  --sidebar: #020617;
+  --sidebar: linear-gradient(180deg, #020617 0%, #0a1225 100%);
   --sidebar-text: #cbd5e1;
-  --sidebar-active: #60a5fa;
 }
 
 body {
   margin: 0;
-  background: var(--bg);
+  background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%), var(--bg);
   color: var(--text);
   transition: background 0.2s ease, color 0.2s ease;
+}
+
+.app-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.9);
+  color: #fff;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.25s ease, visibility 0.25s ease;
+}
+
+.app-loader.hide {
+  opacity: 0;
+  visibility: hidden;
 }
 
 .app-layout {
   min-height: 100vh;
   display: grid;
   grid-template-columns: 260px 1fr;
+  transition: grid-template-columns 0.25s ease;
+}
+
+.app-layout.sidebar-collapsed {
+  grid-template-columns: 0 1fr;
 }
 
 .app-sidebar {
@@ -41,17 +62,23 @@ body {
   top: 0;
   height: 100vh;
   overflow-y: auto;
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+
+.app-layout.sidebar-collapsed .app-sidebar {
+  transform: translateX(-110%);
+  opacity: 0;
 }
 
 .app-title {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   margin: 0;
   color: #fff;
 }
 
 .app-subtitle {
-  font-size: 0.75rem;
+  font-size: 0.76rem;
   opacity: 0.9;
 }
 
@@ -63,28 +90,30 @@ body {
 .side-link {
   color: var(--sidebar-text);
   text-decoration: none;
-  padding: 0.55rem 0.75rem;
-  border-radius: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
   display: block;
   font-size: 0.92rem;
+  transition: all 0.2s ease;
 }
 
 .side-link:hover,
 .side-link.active {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
+  transform: translateX(2px);
 }
 
 .app-content-wrap {
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   min-width: 0;
 }
 
 .app-topbar {
   padding: 0.8rem 1rem;
   border-bottom: 1px solid var(--border);
-  background: var(--card);
+  background: color-mix(in oklab, var(--card) 90%, white 10%);
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
@@ -92,15 +121,30 @@ body {
   position: sticky;
   top: 0;
   z-index: 20;
+  backdrop-filter: blur(6px);
 }
 
 .app-main {
   padding: 1rem;
 }
 
+.app-footer {
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1rem 1rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+  background: transparent;
+}
+
+.app-footer a {
+  color: #2563eb;
+  text-decoration: none;
+}
+
 .bg-white,
 .bg-slate-100,
-.bg-slate-50 {
+.bg-slate-50,
+[class*="rounded-xl shadow"] {
   background: var(--card) !important;
   color: var(--text) !important;
 }
@@ -118,6 +162,17 @@ body {
 
 table td, table th {
   vertical-align: top;
+}
+
+.grid > section,
+.app-main > section,
+.app-main > div {
+  animation: riseIn 0.35s ease both;
+}
+
+@keyframes riseIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .js-table-tools {
@@ -150,6 +205,13 @@ table td, table th {
   color: var(--muted);
 }
 
+.ts-control,
+.ts-dropdown {
+  border-color: var(--border) !important;
+  background: var(--card) !important;
+  color: var(--text) !important;
+}
+
 @media (max-width: 992px) {
   .app-layout {
     grid-template-columns: 1fr;
@@ -163,9 +225,17 @@ table td, table th {
     z-index: 30;
     transition: left 0.2s ease;
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+    transform: none;
+    opacity: 1;
   }
 
   .app-layout.sidebar-open .app-sidebar {
     left: 0;
+  }
+
+  .app-layout.sidebar-collapsed .app-sidebar {
+    left: -280px;
+    transform: none;
+    opacity: 1;
   }
 }
