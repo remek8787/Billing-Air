@@ -8,6 +8,58 @@ requireAuth(['admin', 'collector']);
 $pdo = db();
 $user = currentUser();
 
+function normalizeUsernamePart(string $text): string
+{
+    $text = trim($text);
+    if ($text === '') {
+        return '';
+    }
+
+    $ascii = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $text);
+    if ($ascii !== false) {
+        $text = $ascii;
+    }
+
+    $text = strtolower($text);
+    $text = preg_replace('/[^a-z0-9]+/', '', $text) ?? '';
+
+    return $text;
+}
+
+function autoCustomerUsername(PDO $pdo, int $customerId, string $name, string $address): string
+{
+    $base = normalizeUsernamePart($name . $address);
+    if ($base === '') {
+        $base = 'pelanggan' . $customerId;
+    }
+
+    $base = substr($base, 0, 18);
+    if ($base === '') {
+        $base = 'cust' . $customerId;
+    }
+
+    $candidate = $base;
+    $suffix = 1;
+
+    while (true) {
+        $check = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
+        $check->execute([':username' => $candidate]);
+
+        if (!$check->fetch()) {
+            return $candidate;
+        }
+
+        $candidate = substr($base, 0, 15) . str_pad((string)$suffix, 3, '0', STR_PAD_LEFT);
+        $suffix++;
+    }
+}
+
+function autoCustomerPassword(int $customerId): string
+{
+    $digits = str_pad((string)($customerId % 10000), 4, '0', STR_PAD_LEFT);
+    return 'DSA' . $digits;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -51,28 +103,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create_customer_login') {
         $customerId = (int)($_POST['customer_id'] ?? 0);
         $username = trim($_POST['username'] ?? '');
-        $password = (string)($_POST['password'] ?? '');
+        $password = trim((string)($_POST['password'] ?? ''));
 
-        if ($customerId <= 0 || $username === '' || $password === '') {
-            flash('error', 'customer_id, username, password wajib diisi.');
+        if ($customerId <= 0) {
+            flash('error', 'Silakan pilih pelanggan dulu.');
             header('Location: customers.php');
             exit;
         }
 
-        $check = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
-        $check->execute([':username' => $username]);
-        if ($check->fetch()) {
-            flash('error', 'Username sudah dipakai.');
-            header('Location: customers.php');
-            exit;
-        }
-
-        $cust = $pdo->prepare('SELECT name FROM customers WHERE id = :id LIMIT 1');
+        $cust = $pdo->prepare('SELECT id, name, address FROM customers WHERE id = :id LIMIT 1');
         $cust->execute([':id' => $customerId]);
         $row = $cust->fetch();
 
         if (!$row) {
             flash('error', 'Pelanggan tidak ditemukan.');
+            header('Location: customers.php');
+            exit;
+        }
+
+        $existingCustomerLogin = $pdo->prepare('SELECT id, username FROM users WHERE customer_id = :customer_id AND role = "customer" LIMIT 1');
+        $existingCustomerLogin->execute([':customer_id' => $customerId]);
+        $exists = $existingCustomerLogin->fetch();
+        if ($exists) {
+            flash('error', 'Pelanggan ini sudah punya akun login: ' . $exists['username']);
+            header('Location: customers.php');
+            exit;
+        }
+
+        if ($username === '') {
+            $username = autoCustomerUsername($pdo, $customerId, (string)$row['name'], (string)($row['address'] ?? ''));
+        }
+
+        if ($password === '') {
+            $password = autoCustomerPassword($customerId);
+        }
+
+        $check = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
+        $check->execute([':username' => $username]);
+        if ($check->fetch()) {
+            flash('error', 'Username sudah dipakai, silakan ubah sedikit username-nya.');
             header('Location: customers.php');
             exit;
         }
@@ -86,7 +155,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':customer_id' => $customerId,
         ]);
 
-        flash('success', 'Login pelanggan berhasil dibuat.');
+        flash('success', 'Login pelanggan berhasil dibuat. Username: ' . $username . ' | Password awal: ' . $password);
         header('Location: customers.php');
         exit;
     }
@@ -131,25 +200,34 @@ require __DIR__ . '/includes/header.php';
 
   <section class="bg-white rounded-xl shadow p-4">
     <h2 class="font-semibold mb-3">Buat Login Pelanggan</h2>
-    <form method="post" class="space-y-3">
+    <form method="post" class="space-y-3" id="customer-login-form">
       <input type="hidden" name="action" value="create_customer_login">
       <div>
+        <label class="text-sm">Cari Pelanggan</label>
+        <input id="customer-search" class="mt-1 w-full border rounded px-3 py-2" placeholder="ketik nama/alamat untuk filter dropdown">
+      </div>
+      <div>
         <label class="text-sm">Pelanggan</label>
-        <select name="customer_id" required class="mt-1 w-full border rounded px-3 py-2">
+        <select name="customer_id" id="customer_id" required class="mt-1 w-full border rounded px-3 py-2">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
-            <option value="<?= (int)$c['id'] ?>"><?= e($c['name']) ?></option>
+            <option value="<?= (int)$c['id'] ?>"
+                    data-name="<?= e((string)$c['name']) ?>"
+                    data-address="<?= e((string)($c['address'] ?? '')) ?>">
+              <?= e($c['name']) ?>
+            </option>
           <?php endforeach; ?>
         </select>
       </div>
       <div>
-        <label class="text-sm">Username Login</label>
-        <input name="username" required class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: yanuk01">
+        <label class="text-sm">Username Login (otomatis dari nama+alamat)</label>
+        <input id="username" name="username" class="mt-1 w-full border rounded px-3 py-2" placeholder="otomatis saat pelanggan dipilih">
       </div>
       <div>
-        <label class="text-sm">Password Awal</label>
-        <input name="password" required class="mt-1 w-full border rounded px-3 py-2" placeholder="misal: pelanggan123">
+        <label class="text-sm">Password Awal (format DSA + 4 digit)</label>
+        <input id="password" name="password" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: DSA0001">
       </div>
+      <p class="text-xs text-slate-500">Default otomatis: username dari nama+alamat, password = DSA + 4 digit ID pelanggan.</p>
       <button class="bg-emerald-700 text-white rounded px-4 py-2">Buat Akun Pelanggan</button>
     </form>
   </section>
@@ -203,5 +281,69 @@ require __DIR__ . '/includes/header.php';
     </table>
   </div>
 </section>
+
+<script>
+(() => {
+  const searchInput = document.getElementById('customer-search');
+  const select = document.getElementById('customer_id');
+  const usernameInput = document.getElementById('username');
+  const passwordInput = document.getElementById('password');
+
+  if (!select) return;
+
+  const toSlug = (text) => {
+    return (text || '')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '');
+  };
+
+  const generateUser = (name, address) => {
+    const base = toSlug((name || '') + (address || ''));
+    return (base || 'pelanggan').slice(0, 18);
+  };
+
+  const generatePass = (id) => {
+    const digits = String(Number(id || 0) % 10000).padStart(4, '0');
+    return `DSA${digits}`;
+  };
+
+  const applyAuto = () => {
+    const opt = select.options[select.selectedIndex];
+    if (!opt || !opt.value) return;
+
+    const name = opt.dataset.name || '';
+    const address = opt.dataset.address || '';
+
+    if (usernameInput && usernameInput.value.trim() === '') {
+      usernameInput.value = generateUser(name, address);
+    }
+
+    if (passwordInput && passwordInput.value.trim() === '') {
+      passwordInput.value = generatePass(opt.value);
+    }
+  };
+
+  select.addEventListener('change', () => {
+    if (usernameInput) usernameInput.value = '';
+    if (passwordInput) passwordInput.value = '';
+    applyAuto();
+  });
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value.trim().toLowerCase();
+      Array.from(select.options).forEach((opt, idx) => {
+        if (idx === 0) {
+          opt.hidden = false;
+          return;
+        }
+        const label = `${opt.dataset.name || ''} ${opt.dataset.address || ''}`.toLowerCase();
+        opt.hidden = q !== '' && !label.includes(q);
+      });
+    });
+  }
+})();
+</script>
 
 <?php require __DIR__ . '/includes/footer.php'; ?>
