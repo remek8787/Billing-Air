@@ -188,14 +188,25 @@ require __DIR__ . '/includes/header.php';
 
 <script>
 (() => {
-  const select = document.getElementById('reading_customer_id');
-  if (select && window.TomSelect) {
-    new TomSelect(select, {
-      create: false,
-      maxItems: 1,
-      searchField: ['text'],
-      placeholder: 'Pilih / ketik nama pelanggan...'
-    });
+  const initReadingPicker = () => {
+    const select = document.getElementById('reading_customer_id');
+    if (!select || select.dataset.pickerInit === '1') return;
+    select.dataset.pickerInit = '1';
+
+    if (window.TomSelect) {
+      new TomSelect(select, {
+        create: false,
+        maxItems: 1,
+        searchField: ['text'],
+        placeholder: 'Ketik ID / nama pelanggan...'
+      });
+    }
+  };
+
+  if (document.readyState === 'complete') {
+    initReadingPicker();
+  } else {
+    window.addEventListener('load', initReadingPicker, { once: true });
   }
 })();
 </script>

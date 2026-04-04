@@ -208,14 +208,16 @@ require __DIR__ . '/includes/header.php';
     <form method="post" class="space-y-3" id="customer-login-form">
       <input type="hidden" name="action" value="create_customer_login">
       <div>
-        <label class="text-sm">Pelanggan (ketik langsung untuk cari realtime)</label>
+        <label class="text-sm">Pelanggan (ketik nama / alamat / ID pelanggan)</label>
         <select name="customer_id" id="customer_id" required class="mt-1 w-full border rounded px-3 py-2">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
+            <?php $loginId = !empty($c['customer_login_id']) ? (string)$c['customer_login_id'] : defaultCustomerPasswordById((int)$c['id']); ?>
             <option value="<?= (int)$c['id'] ?>"
                     data-name="<?= e((string)$c['name']) ?>"
-                    data-address="<?= e((string)($c['address'] ?? '')) ?>">
-              <?= e($c['name']) ?><?= !empty($c['address']) ? ' — ' . e((string)$c['address']) : '' ?>
+                    data-address="<?= e((string)($c['address'] ?? '')) ?>"
+                    data-login-id="<?= e($loginId) ?>">
+              <?= e($loginId . ' • ' . $c['name']) ?><?= !empty($c['address']) ? ' — ' . e((string)$c['address']) : '' ?>
             </option>
           <?php endforeach; ?>
         </select>
@@ -294,74 +296,83 @@ require __DIR__ . '/includes/header.php';
 
 <script>
 (() => {
-  const select = document.getElementById('customer_id');
-  const usernameInput = document.getElementById('username');
-  const passwordInput = document.getElementById('password');
+  const initCustomerPicker = () => {
+    const select = document.getElementById('customer_id');
+    const usernameInput = document.getElementById('username');
+    const passwordInput = document.getElementById('password');
 
-  if (!select) return;
+    if (!select || select.dataset.pickerInit === '1') return;
+    select.dataset.pickerInit = '1';
 
-  const toSlug = (text) => {
-    return (text || '')
-      .toLowerCase()
-      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '');
-  };
+    const toSlug = (text) => {
+      return (text || '')
+        .toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '');
+    };
 
-  const generateUser = (name, address) => {
-    const base = toSlug((name || '') + (address || ''));
-    return (base || 'pelanggan').slice(0, 18);
-  };
+    const generateUser = (name, address) => {
+      const base = toSlug((name || '') + (address || ''));
+      return (base || 'pelanggan').slice(0, 18);
+    };
 
-  const generatePass = (id) => {
-    const digits = String(Number(id || 0) % 10000).padStart(4, '0');
-    return `DSA${digits}`;
-  };
+    const generatePass = (id) => {
+      const digits = String(Number(id || 0) % 10000).padStart(4, '0');
+      return `DSA${digits}`;
+    };
 
-  const applyAutoByValue = (value) => {
-    if (!value) return;
-    const opt = Array.from(select.options).find((o) => o.value === String(value));
-    if (!opt) return;
+    const applyAutoByValue = (value) => {
+      if (!value) return;
+      const opt = Array.from(select.options).find((o) => o.value === String(value));
+      if (!opt) return;
 
-    const name = opt.dataset.name || '';
-    const address = opt.dataset.address || '';
+      const name = opt.dataset.name || '';
+      const address = opt.dataset.address || '';
 
-    if (usernameInput && usernameInput.value.trim() === '') {
-      usernameInput.value = generateUser(name, address);
-    }
-
-    if (passwordInput && passwordInput.value.trim() === '') {
-      passwordInput.value = generatePass(value);
-    }
-  };
-
-  if (window.TomSelect) {
-    const ts = new TomSelect(select, {
-      create: false,
-      maxItems: 1,
-      valueField: 'value',
-      labelField: 'text',
-      searchField: ['text'],
-      placeholder: 'Pilih / ketik nama pelanggan...',
-      render: {
-        option: function(data, escape) {
-          return `<div>${escape(data.text)}</div>`;
-        }
-      },
-      onChange(value) {
-        if (usernameInput) usernameInput.value = '';
-        if (passwordInput) passwordInput.value = '';
-        applyAutoByValue(value);
+      if (usernameInput && usernameInput.value.trim() === '') {
+        usernameInput.value = generateUser(name, address);
       }
-    });
 
-    // initial if pre-selected
-    applyAutoByValue(ts.getValue());
-  } else {
+      if (passwordInput && passwordInput.value.trim() === '') {
+        passwordInput.value = generatePass(value);
+      }
+    };
+
+    if (window.TomSelect) {
+      const ts = new TomSelect(select, {
+        create: false,
+        maxItems: 1,
+        valueField: 'value',
+        labelField: 'text',
+        searchField: ['text'],
+        placeholder: 'Ketik ID / nama / alamat pelanggan...',
+        render: {
+          option: function(data, escape) {
+            return `<div>${escape(data.text)}</div>`;
+          }
+        },
+        onChange(value) {
+          if (usernameInput) usernameInput.value = '';
+          if (passwordInput) passwordInput.value = '';
+          applyAutoByValue(value);
+        }
+      });
+
+      applyAutoByValue(ts.getValue());
+      return;
+    }
+
     select.addEventListener('change', () => {
       if (usernameInput) usernameInput.value = '';
       if (passwordInput) passwordInput.value = '';
       applyAutoByValue(select.value);
     });
+  };
+
+  if (document.readyState === 'complete') {
+    initCustomerPicker();
+  } else {
+    window.addEventListener('load', initCustomerPicker, { once: true });
   }
 })();
 </script>
