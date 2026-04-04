@@ -94,8 +94,13 @@ if ($filterMonth >= 1 && $filterMonth <= 12) {
     $params[':month'] = $filterMonth;
 }
 
-$sql = 'SELECT mr.*, c.name AS customer_name FROM meter_readings mr
-    JOIN customers c ON c.id = mr.customer_id';
+$sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
+        u.username AS customer_username,
+        cls.password_plain AS customer_login_id
+    FROM meter_readings mr
+    JOIN customers c ON c.id = mr.customer_id
+    LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
+    LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id';
 
 if ($where) {
     $sql .= ' WHERE ' . implode(' AND ', $where);
@@ -106,6 +111,20 @@ $sql .= ' ORDER BY mr.period_year DESC, mr.period_month DESC, c.name ASC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $bills = $stmt->fetchAll();
+
+$customerIdentity = null;
+if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
+    $identityStmt = $pdo->prepare('SELECT c.name, c.address, u.username, cls.password_plain
+        FROM customers c
+        LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
+        LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
+        WHERE c.id = :customer_id
+        LIMIT 1');
+    $identityStmt->execute([':customer_id' => (int)$user['customer_id']]);
+    $customerIdentity = $identityStmt->fetch() ?: null;
+}
+
+$emptyColspan = $user['role'] === 'customer' ? 13 : 14;
 
 $totalAmount = 0;
 $totalUnpaid = 0;
@@ -141,6 +160,13 @@ require __DIR__ . '/includes/header.php';
     <div class="p-3 rounded bg-slate-100">Total Tagihan Tampil: <b><?= e(rupiah($totalAmount)) ?></b></div>
     <div class="p-3 rounded bg-amber-100 text-amber-900">Total Belum Lunas: <b><?= e(rupiah($totalUnpaid)) ?></b></div>
   </div>
+
+  <?php if ($user['role'] === 'customer' && $customerIdentity): ?>
+    <div class="mt-3 p-3 rounded bg-emerald-50 text-emerald-900 text-sm">
+      <div><b>Alamat:</b> <?= e((string)($customerIdentity['address'] ?? '-')) ?></div>
+      <div><b>ID Pelanggan:</b> <?= e((string)($customerIdentity['password_plain'] ?? '-')) ?> <span class="text-xs text-emerald-700">(ID = Password)</span></div>
+    </div>
+  <?php endif; ?>
 </section>
 
 <section class="bg-white rounded-xl shadow p-4">
@@ -150,6 +176,8 @@ require __DIR__ . '/includes/header.php';
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
           <?php if ($user['role'] !== 'customer'): ?><th class="py-2 pr-3">Pelanggan</th><?php endif; ?>
+          <th class="py-2 pr-3">Alamat</th>
+          <th class="py-2 pr-3">ID Pelanggan</th>
           <th class="py-2 pr-3">Awal</th>
           <th class="py-2 pr-3">Akhir</th>
           <th class="py-2 pr-3">Pemakaian</th>
@@ -167,6 +195,14 @@ require __DIR__ . '/includes/header.php';
         <tr class="border-b">
           <td class="py-2 pr-3"><?= e(periodLabel((int)$bill['period_month'], (int)$bill['period_year'])) ?></td>
           <?php if ($user['role'] !== 'customer'): ?><td class="py-2 pr-3"><?= e($bill['customer_name']) ?></td><?php endif; ?>
+          <td class="py-2 pr-3"><?= e((string)($bill['customer_address'] ?? '-')) ?></td>
+          <td class="py-2 pr-3">
+            <?php if (!empty($bill['customer_login_id'])): ?>
+              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e((string)$bill['customer_login_id']) ?></code>
+            <?php else: ?>
+              <span class="text-xs text-slate-500">-</span>
+            <?php endif; ?>
+          </td>
           <td class="py-2 pr-3"><?= (int)$bill['meter_awal'] ?></td>
           <td class="py-2 pr-3"><?= (int)$bill['meter_akhir'] ?></td>
           <td class="py-2 pr-3"><?= (int)$bill['usage_m3'] ?> m³</td>
@@ -226,7 +262,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
       <?php endforeach; ?>
       <?php if (!$bills): ?>
-        <tr><td colspan="12" class="py-4 text-slate-500">Tidak ada tagihan untuk filter ini.</td></tr>
+        <tr><td colspan="<?= $emptyColspan ?>" class="py-4 text-slate-500">Tidak ada tagihan untuk filter ini.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
