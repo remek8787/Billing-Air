@@ -4,6 +4,15 @@
   --text: #0f172a;
   --muted: #475569;
   --border: #dbe3ef;
+  --input-bg: #ffffff;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+  --id-pill-bg: #dbeafe;
+  --id-pill-text: #1e3a8a;
+  --status-paid-bg: #d1fae5;
+  --status-paid-text: #065f46;
+  --status-unpaid-bg: #fef3c7;
+  --status-unpaid-text: #92400e;
   --sidebar: linear-gradient(180deg, #0b1635 0%, #08122d 100%);
   --sidebar-text: #d7e3ff;
 }
@@ -14,6 +23,15 @@ body[data-theme="dark"] {
   --text: #e2e8f0;
   --muted: #94a3b8;
   --border: #334155;
+  --input-bg: #0b1220;
+  --input-text: #e2e8f0;
+  --input-placeholder: #64748b;
+  --id-pill-bg: #1e3a8a;
+  --id-pill-text: #dbeafe;
+  --status-paid-bg: #064e3b;
+  --status-paid-text: #a7f3d0;
+  --status-unpaid-bg: #78350f;
+  --status-unpaid-text: #fde68a;
   --sidebar: linear-gradient(180deg, #020617 0%, #0a1225 100%);
   --sidebar-text: #cbd5e1;
 }
@@ -189,8 +207,8 @@ table td, table th {
   font-size: 0.74rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  background: color-mix(in oklab, var(--card) 82%, #1d4ed8 18%);
-  color: color-mix(in oklab, #fff 86%, #bfdbfe 14%);
+  background: var(--id-pill-bg);
+  color: var(--id-pill-text);
 }
 
 .name-cell {
@@ -220,13 +238,13 @@ table td, table th {
 }
 
 .status-pill.paid {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--status-paid-bg);
+  color: var(--status-paid-text);
 }
 
 .status-pill.unpaid {
-  background: #fef3c7;
-  color: #92400e;
+  background: var(--status-unpaid-bg);
+  color: var(--status-unpaid-text);
 }
 
 .stat-card {
@@ -239,6 +257,47 @@ table td, table th {
 .table-wrap {
   border: 1px solid var(--border);
   border-radius: 0.9rem;
+}
+
+input,
+select,
+textarea,
+.form-control,
+.form-select {
+  background: var(--input-bg) !important;
+  color: var(--input-text) !important;
+  border-color: var(--border) !important;
+}
+
+input::placeholder,
+textarea::placeholder,
+.form-control::placeholder {
+  color: var(--input-placeholder) !important;
+  opacity: 1;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.form-control:focus,
+.form-select:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 0.18rem rgba(59, 130, 246, 0.22) !important;
+}
+
+.btn-outline-secondary {
+  color: var(--text) !important;
+  border-color: var(--border) !important;
+}
+
+.btn-outline-secondary:hover {
+  background: color-mix(in oklab, var(--card) 84%, #334155 16%) !important;
+  color: var(--text) !important;
+}
+
+.badge.text-bg-success {
+  background: #0f766e !important;
+  color: #ecfeff !important;
 }
 
 .grid > section,
