@@ -124,7 +124,7 @@ if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
     $customerIdentity = $identityStmt->fetch() ?: null;
 }
 
-$emptyColspan = $user['role'] === 'customer' ? 13 : 14;
+$emptyColspan = 14;
 
 $totalAmount = 0;
 $totalUnpaid = 0;
@@ -170,14 +170,14 @@ require __DIR__ . '/includes/header.php';
 </section>
 
 <section class="bg-white rounded-xl shadow p-4">
-  <div class="overflow-auto">
-    <table class="min-w-full text-sm js-data-table" data-page-size="10">
+  <div class="overflow-auto table-wrap">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
-          <?php if ($user['role'] !== 'customer'): ?><th class="py-2 pr-3">Pelanggan</th><?php endif; ?>
-          <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">ID Pelanggan</th>
+          <th class="py-2 pr-3">Nama</th>
+          <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">Awal</th>
           <th class="py-2 pr-3">Akhir</th>
           <th class="py-2 pr-3">Pemakaian</th>
@@ -194,15 +194,17 @@ require __DIR__ . '/includes/header.php';
       <?php foreach ($bills as $bill): ?>
         <tr class="border-b">
           <td class="py-2 pr-3"><?= e(periodLabel((int)$bill['period_month'], (int)$bill['period_year'])) ?></td>
-          <?php if ($user['role'] !== 'customer'): ?><td class="py-2 pr-3"><?= e($bill['customer_name']) ?></td><?php endif; ?>
-          <td class="py-2 pr-3"><?= e((string)($bill['customer_address'] ?? '-')) ?></td>
           <td class="py-2 pr-3">
-            <?php if (!empty($bill['customer_login_id'])): ?>
-              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e((string)$bill['customer_login_id']) ?></code>
-            <?php else: ?>
-              <span class="text-xs text-slate-500">-</span>
-            <?php endif; ?>
+            <?php
+              $idPelanggan = (string)($bill['customer_login_id'] ?? '');
+              if ($idPelanggan === '') {
+                  $idPelanggan = defaultCustomerPasswordById((int)$bill['customer_id']);
+              }
+            ?>
+            <span class="id-pill"><?= e($idPelanggan) ?></span>
           </td>
+          <td class="py-2 pr-3"><div class="name-cell"><?= e((string)$bill['customer_name']) ?></div></td>
+          <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)($bill['customer_address'] ?? '-')) ?>"><?= e((string)($bill['customer_address'] ?? '-')) ?></div></td>
           <td class="py-2 pr-3"><?= (int)$bill['meter_awal'] ?></td>
           <td class="py-2 pr-3"><?= (int)$bill['meter_akhir'] ?></td>
           <td class="py-2 pr-3"><?= (int)$bill['usage_m3'] ?> m³</td>
@@ -210,7 +212,7 @@ require __DIR__ . '/includes/header.php';
           <td class="py-2 pr-3"><?= e(rupiah((int)$bill['price_per_m3'])) ?></td>
           <td class="py-2 pr-3 font-semibold"><?= e(rupiah((int)$bill['amount_total'])) ?></td>
           <td class="py-2 pr-3">
-            <span class="px-2 py-1 rounded text-xs <?= $bill['status'] === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?>">
+            <span class="status-pill <?= $bill['status'] === 'paid' ? 'paid' : 'unpaid' ?>">
               <?= $bill['status'] === 'paid' ? 'Lunas' : 'Belum Lunas' ?>
             </span>
           </td>

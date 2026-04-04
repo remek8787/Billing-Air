@@ -164,6 +164,83 @@ table td, table th {
   vertical-align: top;
 }
 
+.table-soft thead th {
+  font-size: 0.79rem;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--muted) 84%, var(--text) 16%);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.table-soft tbody tr {
+  transition: background 0.2s ease;
+}
+
+.table-soft tbody tr:hover {
+  background: color-mix(in oklab, var(--card) 92%, #3b82f6 8%);
+}
+
+.id-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: color-mix(in oklab, var(--card) 82%, #1d4ed8 18%);
+  color: color-mix(in oklab, #fff 86%, #bfdbfe 14%);
+}
+
+.name-cell {
+  font-weight: 600;
+  color: var(--text);
+  min-width: 120px;
+}
+
+.address-cell {
+  max-width: 280px;
+  line-height: 1.35;
+  color: var(--muted);
+  font-size: 0.83rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.58rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.status-pill.paid {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-pill.unpaid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.stat-card {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 96%, #ffffff 4%), var(--card));
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.08);
+}
+
+.table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+}
+
 .grid > section,
 .app-main > section,
 .app-main > div {

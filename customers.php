@@ -243,8 +243,8 @@ require __DIR__ . '/includes/header.php';
 
 <section class="bg-white rounded-xl shadow p-4 mt-4">
   <h2 class="font-semibold mb-3">Daftar Pelanggan</h2>
-  <div class="overflow-auto">
-    <table class="min-w-full text-sm js-data-table" data-page-size="10">
+  <div class="overflow-auto table-wrap">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">ID</th>
@@ -260,15 +260,15 @@ require __DIR__ . '/includes/header.php';
       <?php foreach ($customers as $c): ?>
         <tr class="border-b">
           <td class="py-2 pr-3"><?= (int)$c['id'] ?></td>
-          <td class="py-2 pr-3"><?= e($c['name']) ?></td>
-          <td class="py-2 pr-3"><?= e($c['address']) ?></td>
+          <td class="py-2 pr-3"><div class="name-cell"><?= e($c['name']) ?></div></td>
+          <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)$c['address']) ?>"><?= e($c['address']) ?></div></td>
           <td class="py-2 pr-3"><?= e($c['phone']) ?></td>
           <td class="py-2 pr-3"><?= e($c['customer_username'] ?? '-') ?></td>
           <td class="py-2 pr-3">
             <?php if (!empty($c['customer_login_id'])): ?>
-              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e((string)$c['customer_login_id']) ?></code>
+              <span class="id-pill"><?= e((string)$c['customer_login_id']) ?></span>
             <?php else: ?>
-              <code class="px-2 py-1 rounded bg-amber-50 text-amber-800"><?= e(defaultCustomerPasswordById((int)$c['id'])) ?></code>
+              <span class="id-pill"><?= e(defaultCustomerPasswordById((int)$c['id'])) ?></span>
               <div class="text-xs text-slate-500 mt-1">default (jika akun login belum dibuat)</div>
             <?php endif; ?>
           </td>

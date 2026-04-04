@@ -39,7 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$customers = $pdo->query('SELECT id, name FROM customers ORDER BY name ASC')->fetchAll();
+$customers = $pdo->query('SELECT c.id, c.name, c.address,
+        cls.password_plain AS customer_login_id
+    FROM customers c
+    LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
+    LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
+    ORDER BY c.name ASC')->fetchAll();
 
 $editId = (int)($_GET['edit'] ?? 0);
 $editReading = null;
@@ -49,9 +54,13 @@ if ($editId > 0) {
     $editReading = $stmt->fetch();
 }
 
-$latest = $pdo->query('SELECT mr.*, c.name AS customer_name, u.full_name AS input_name
+$latest = $pdo->query('SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
+        cls.password_plain AS customer_login_id,
+        u.full_name AS input_name
     FROM meter_readings mr
     JOIN customers c ON c.id = mr.customer_id
+    LEFT JOIN users cu ON cu.customer_id = c.id AND cu.role = "customer"
+    LEFT JOIN customer_login_secrets cls ON cls.user_id = cu.id
     LEFT JOIN users u ON u.id = mr.input_by
     ORDER BY mr.period_year DESC, mr.period_month DESC, mr.customer_id ASC
     LIMIT 40')->fetchAll();
@@ -74,9 +83,11 @@ require __DIR__ . '/includes/header.php';
         <select name="customer_id" required class="mt-1 w-full border rounded px-3 py-2" id="reading_customer_id">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
-            <option value="<?= (int)$c['id'] ?>" <?= $selectedCustomerId === (int)$c['id'] ? 'selected' : '' ?>><?= e($c['name']) ?></option>
+            <?php $defaultId = !empty($c['customer_login_id']) ? (string)$c['customer_login_id'] : defaultCustomerPasswordById((int)$c['id']); ?>
+            <option value="<?= (int)$c['id'] ?>" <?= $selectedCustomerId === (int)$c['id'] ? 'selected' : '' ?>><?= e($defaultId . ' • ' . $c['name']) ?></option>
           <?php endforeach; ?>
         </select>
+        <p class="text-xs text-slate-500 mt-1">Format tampil: ID Pelanggan • Nama</p>
       </div>
 
       <div class="grid grid-cols-2 gap-2">
@@ -121,12 +132,14 @@ require __DIR__ . '/includes/header.php';
 
 <section class="bg-white rounded-xl shadow p-4 mt-4">
   <h2 class="font-semibold mb-3">Data Meter Terbaru</h2>
-  <div class="overflow-auto">
-    <table class="min-w-full text-sm js-data-table" data-page-size="10">
+  <div class="overflow-auto table-wrap">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
-          <th class="py-2 pr-3">Pelanggan</th>
+          <th class="py-2 pr-3">ID Pelanggan</th>
+          <th class="py-2 pr-3">Nama</th>
+          <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">Awal</th>
           <th class="py-2 pr-3">Akhir</th>
           <th class="py-2 pr-3">Pemakaian</th>
@@ -139,7 +152,17 @@ require __DIR__ . '/includes/header.php';
       <?php foreach ($latest as $r): ?>
         <tr class="border-b">
           <td class="py-2 pr-3"><?= e(periodLabel((int)$r['period_month'], (int)$r['period_year'])) ?></td>
-          <td class="py-2 pr-3"><?= e($r['customer_name']) ?></td>
+          <td class="py-2 pr-3">
+            <?php
+              $idPelanggan = (string)($r['customer_login_id'] ?? '');
+              if ($idPelanggan === '') {
+                  $idPelanggan = defaultCustomerPasswordById((int)$r['customer_id']);
+              }
+            ?>
+            <span class="id-pill"><?= e($idPelanggan) ?></span>
+          </td>
+          <td class="py-2 pr-3"><div class="name-cell"><?= e($r['customer_name']) ?></div></td>
+          <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)($r['customer_address'] ?? '-')) ?>"><?= e((string)($r['customer_address'] ?? '-')) ?></div></td>
           <td class="py-2 pr-3"><?= (int)$r['meter_awal'] ?></td>
           <td class="py-2 pr-3"><?= (int)$r['meter_akhir'] ?></td>
           <td class="py-2 pr-3"><?= (int)$r['usage_m3'] ?> m³</td>
@@ -156,7 +179,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
       <?php endforeach; ?>
       <?php if (!$latest): ?>
-        <tr><td colspan="8" class="py-4 text-slate-500">Belum ada data meter.</td></tr>
+        <tr><td colspan="10" class="py-4 text-slate-500">Belum ada data meter.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>

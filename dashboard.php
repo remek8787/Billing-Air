@@ -58,19 +58,19 @@ require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
-  <div class="bg-white rounded-xl shadow p-4">
+  <div class="stat-card p-4">
     <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Total Tagihan Saya' : 'Semua Pelanggan' ?></p>
     <p class="text-3xl font-bold"><?= $customerCount ?></p>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
+  <div class="stat-card p-4">
     <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Tagihan Lunas Saya' : 'Pelanggan Lunas' ?></p>
     <p class="text-3xl font-bold text-emerald-600"><?= $paidCustomerCount ?></p>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
+  <div class="stat-card p-4">
     <p class="text-sm text-slate-500"><?= $user['role'] === 'customer' ? 'Tagihan Belum Lunas Saya' : 'Pelanggan Belum Lunas' ?></p>
     <p class="text-3xl font-bold text-amber-600"><?= $unpaidCustomerCount ?></p>
   </div>
-  <div class="bg-white rounded-xl shadow p-4">
+  <div class="stat-card p-4">
     <p class="text-sm text-slate-500">Total Piutang</p>
     <p class="text-3xl font-bold"><?= e(rupiah($unpaidTotal)) ?></p>
     <div class="text-xs text-slate-500 mt-1">Tagihan belum lunas: <?= $unpaidCount ?></div>
@@ -79,8 +79,8 @@ require __DIR__ . '/includes/header.php';
 
 <div class="bg-white rounded-xl shadow p-4">
   <h2 class="text-lg font-semibold mb-3"><?= $user['role'] === 'customer' ? 'Riwayat Tagihan Saya' : 'Input/Tagihan Terbaru' ?></h2>
-  <div class="overflow-auto">
-    <table class="min-w-full text-sm js-data-table" data-page-size="10">
+  <div class="overflow-auto table-wrap">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
@@ -105,17 +105,17 @@ require __DIR__ . '/includes/header.php';
                     $idPelanggan = defaultCustomerPasswordById((int)$bill['customer_id']);
                 }
               ?>
-              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e($idPelanggan !== '' ? $idPelanggan : '-') ?></code>
+              <span class="id-pill"><?= e($idPelanggan !== '' ? $idPelanggan : '-') ?></span>
             </td>
-            <td class="py-2 pr-3"><?= e((string)($bill['customer_name'] ?? '-')) ?></td>
-            <td class="py-2 pr-3"><?= e((string)($bill['customer_address'] ?? '-')) ?></td>
+            <td class="py-2 pr-3"><div class="name-cell"><?= e((string)($bill['customer_name'] ?? '-')) ?></div></td>
+            <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)($bill['customer_address'] ?? '-')) ?>"><?= e((string)($bill['customer_address'] ?? '-')) ?></div></td>
             <td class="py-2 pr-3"><?= (int)$bill['meter_awal'] ?></td>
             <td class="py-2 pr-3"><?= (int)$bill['meter_akhir'] ?></td>
             <td class="py-2 pr-3"><?= (int)$bill['usage_m3'] ?> m³</td>
             <td class="py-2 pr-3"><?= e(rupiah((int)$bill['amount_total'])) ?></td>
             <td class="py-2 pr-3">
-              <span class="px-2 py-1 rounded text-xs <?= $bill['status'] === 'paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' ?>">
-                <?= e($bill['status']) ?>
+              <span class="status-pill <?= $bill['status'] === 'paid' ? 'paid' : 'unpaid' ?>">
+                <?= $bill['status'] === 'paid' ? 'Lunas' : 'Belum Lunas' ?>
               </span>
             </td>
           </tr>

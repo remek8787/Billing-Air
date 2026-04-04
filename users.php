@@ -255,11 +255,12 @@ require __DIR__ . '/includes/header.php';
 <section class="bg-white rounded-xl shadow p-4 mt-4">
   <h2 class="font-semibold mb-3">Login Pelanggan (lihat password + edit + hapus)</h2>
   <p class="text-xs text-slate-500 mb-3">Password hanya ditampilkan untuk kebutuhan operasional admin. Disarankan ganti berkala.</p>
-  <div class="overflow-auto">
-    <table class="min-w-full text-sm js-data-table" data-page-size="10">
+  <div class="overflow-auto table-wrap">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
-          <th class="py-2 pr-3">ID</th>
+          <th class="py-2 pr-3">User ID</th>
+          <th class="py-2 pr-3">ID Pelanggan</th>
           <th class="py-2 pr-3">Pelanggan</th>
           <th class="py-2 pr-3">Username</th>
           <th class="py-2 pr-3">Password Tercatat</th>
@@ -272,13 +273,17 @@ require __DIR__ . '/includes/header.php';
         <tr class="border-b align-top">
           <td class="py-2 pr-3"><?= (int)$cu['id'] ?></td>
           <td class="py-2 pr-3">
-            <div class="font-medium"><?= e($cu['customer_name'] ?? $cu['full_name']) ?></div>
-            <div class="text-xs text-slate-500"><?= e($cu['address'] ?? '-') ?></div>
+            <?php $defaultId = defaultCustomerPasswordById((int)($cu['customer_id'] ?? 0)); ?>
+            <span class="id-pill"><?= e(!empty($cu['password_plain']) ? (string)$cu['password_plain'] : $defaultId) ?></span>
+          </td>
+          <td class="py-2 pr-3">
+            <div class="name-cell"><?= e($cu['customer_name'] ?? $cu['full_name']) ?></div>
+            <div class="address-cell" title="<?= e((string)($cu['address'] ?? '-')) ?>"><?= e($cu['address'] ?? '-') ?></div>
           </td>
           <td class="py-2 pr-3"><?= e($cu['username']) ?></td>
           <td class="py-2 pr-3">
             <?php if (!empty($cu['password_plain'])): ?>
-              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e($cu['password_plain']) ?></code>
+              <span class="id-pill"><?= e($cu['password_plain']) ?></span>
             <?php else: ?>
               <span class="text-xs text-slate-500">(Belum tercatat, klik Reset Default)</span>
             <?php endif; ?>
@@ -306,7 +311,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
       <?php endforeach; ?>
       <?php if (!$customerUsers): ?>
-        <tr><td colspan="6" class="py-4 text-slate-500">Belum ada login pelanggan.</td></tr>
+        <tr><td colspan="7" class="py-4 text-slate-500">Belum ada login pelanggan.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
