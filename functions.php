@@ -45,7 +45,15 @@ function saveCustomerLoginSecret(int $userId, string $passwordPlain): void
 
 function defaultCustomerPasswordById(int $customerId): string
 {
-    $digits = str_pad((string)($customerId % 10000), 4, '0', STR_PAD_LEFT);
+    $customerNo = $customerId;
+    $stmt = db()->prepare('SELECT customer_no FROM customers WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $customerId]);
+    $row = $stmt->fetch();
+    if ($row && (int)($row['customer_no'] ?? 0) > 0) {
+        $customerNo = (int)$row['customer_no'];
+    }
+
+    $digits = str_pad((string)($customerNo % 10000), 4, '0', STR_PAD_LEFT);
     return 'DSA' . $digits;
 }
 

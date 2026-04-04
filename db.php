@@ -89,6 +89,10 @@ function initializeDatabase(PDO $pdo): void
 
     ensureTableColumn($pdo, 'meter_readings', 'payment_method', 'TEXT');
     ensureTableColumn($pdo, 'meter_readings', 'payment_note', 'TEXT');
+    ensureTableColumn($pdo, 'customers', 'customer_no', 'INTEGER');
+
+    normalizeCustomerNumbers($pdo);
+    syncCustomerDsaPasswordsByNumber($pdo);
 
     seedDefaults($pdo);
 }
@@ -131,4 +135,101 @@ function seedDefaults(PDO $pdo): void
         ':role' => 'collector',
         ':full_name' => 'Petugas Collector'
     ]);
+}
+
+function normalizeCustomerNumbers(PDO $pdo): void
+{
+    $rows = $pdo->query('SELECT id, customer_no FROM customers ORDER BY id ASC')->fetchAll();
+    if (!$rows) {
+        return;
+    }
+
+    $used = [];
+    $takenFirstOwner = [];
+    foreach ($rows as $row) {
+        $id = (int)($row['id'] ?? 0);
+        $no = (int)($row['customer_no'] ?? 0);
+        if ($id <= 0 || $no <= 0) {
+            continue;
+        }
+
+        if (!isset($takenFirstOwner[$no])) {
+            $takenFirstOwner[$no] = $id;
+            $used[$no] = true;
+        }
+    }
+
+    $nextAvailable = static function () use (&$used): int {
+        $n = 1;
+        while (isset($used[$n])) {
+            $n++;
+        }
+        return $n;
+    };
+
+    $update = $pdo->prepare('UPDATE customers SET customer_no = :customer_no WHERE id = :id');
+
+    foreach ($rows as $row) {
+        $id = (int)($row['id'] ?? 0);
+        $no = (int)($row['customer_no'] ?? 0);
+        if ($id <= 0) {
+            continue;
+        }
+
+        $isPrimaryOwner = ($no > 0) && (($takenFirstOwner[$no] ?? 0) === $id);
+        if ($isPrimaryOwner) {
+            continue;
+        }
+
+        $assignNo = $nextAvailable();
+        $update->execute([':customer_no' => $assignNo, ':id' => $id]);
+        $used[$assignNo] = true;
+    }
+}
+
+function syncCustomerDsaPasswordsByNumber(PDO $pdo): void
+{
+    $rows = $pdo->query('SELECT u.id AS user_id, c.customer_no, cls.password_plain
+        FROM users u
+        JOIN customers c ON c.id = u.customer_id
+        LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
+        WHERE u.role = "customer"')->fetchAll();
+
+    if (!$rows) {
+        return;
+    }
+
+    $updateUser = $pdo->prepare('UPDATE users SET password_hash = :password_hash WHERE id = :id');
+    $upsertSecret = $pdo->prepare('INSERT INTO customer_login_secrets(user_id, password_plain, updated_at)
+        VALUES(:user_id, :password_plain, :updated_at)
+        ON CONFLICT(user_id) DO UPDATE SET
+            password_plain = excluded.password_plain,
+            updated_at = excluded.updated_at');
+
+    foreach ($rows as $row) {
+        $userId = (int)($row['user_id'] ?? 0);
+        $customerNo = (int)($row['customer_no'] ?? 0);
+        if ($userId <= 0 || $customerNo <= 0) {
+            continue;
+        }
+
+        $expected = 'DSA' . str_pad((string)($customerNo % 10000), 4, '0', STR_PAD_LEFT);
+        $plain = trim((string)($row['password_plain'] ?? ''));
+
+        $shouldSync = ($plain === '') || (bool)preg_match('/^DSA\d{4}$/', $plain);
+        if (!$shouldSync || $plain === $expected) {
+            continue;
+        }
+
+        $updateUser->execute([
+            ':password_hash' => password_hash($expected, PASSWORD_DEFAULT),
+            ':id' => $userId,
+        ]);
+
+        $upsertSecret->execute([
+            ':user_id' => $userId,
+            ':password_plain' => $expected,
+            ':updated_at' => date('Y-m-d H:i:s'),
+        ]);
+    }
 }

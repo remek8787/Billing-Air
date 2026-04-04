@@ -59,6 +59,25 @@ function autoCustomerPassword(int $customerId): string
     return defaultCustomerPasswordById($customerId);
 }
 
+function nextCustomerNumber(PDO $pdo): int
+{
+    $rows = $pdo->query('SELECT customer_no FROM customers WHERE customer_no IS NOT NULL AND customer_no > 0 ORDER BY customer_no ASC')->fetchAll();
+    $used = [];
+    foreach ($rows as $row) {
+        $no = (int)($row['customer_no'] ?? 0);
+        if ($no > 0) {
+            $used[$no] = true;
+        }
+    }
+
+    $n = 1;
+    while (isset($used[$n])) {
+        $n++;
+    }
+
+    return $n;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -83,6 +102,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([':name' => $name, ':address' => $address, ':phone' => $phone]);
 
             $newCustomerId = (int)$pdo->lastInsertId();
+            $newCustomerNo = nextCustomerNumber($pdo);
+            $pdo->prepare('UPDATE customers SET customer_no = :customer_no WHERE id = :id')
+                ->execute([':customer_no' => $newCustomerNo, ':id' => $newCustomerId]);
+
             $autoUsername = autoCustomerUsername($pdo, $newCustomerId, $name, $address);
             $autoPassword = autoCustomerPassword($newCustomerId);
 
