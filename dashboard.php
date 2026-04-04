@@ -84,7 +84,7 @@ require __DIR__ . '/includes/header.php';
 <div class="bg-white rounded-xl shadow p-4">
   <h2 class="text-lg font-semibold mb-3"><?= $user['role'] === 'customer' ? 'Riwayat Tagihan Saya' : 'Daftar Tagihan Terdata' ?></h2>
   <div class="overflow-auto table-wrap">
-    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="50">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>

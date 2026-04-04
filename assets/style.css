@@ -41,6 +41,7 @@ body {
   background: radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 28%), var(--bg);
   color: var(--text);
   transition: background 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-loader {
@@ -257,6 +258,8 @@ table td, table th {
 .table-wrap {
   border: 1px solid var(--border);
   border-radius: 0.9rem;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
 }
 
 input,
@@ -348,6 +351,10 @@ textarea:focus,
   color: var(--text) !important;
 }
 
+.ts-control input::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
 @media (max-width: 992px) {
   .app-layout {
     grid-template-columns: 1fr;
@@ -373,5 +380,48 @@ textarea:focus,
     left: -280px;
     transform: none;
     opacity: 1;
+  }
+
+  .app-topbar {
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.7rem 0.8rem;
+  }
+
+  .app-main {
+    padding: 0.8rem;
+  }
+
+  .js-table-tools {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .js-table-search {
+    min-width: 0;
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .js-table-pager {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .table-soft th,
+  .table-soft td {
+    padding-top: 0.45rem !important;
+    padding-bottom: 0.45rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  .address-cell {
+    max-width: 180px;
+  }
+
+  .id-pill,
+  .status-pill {
+    font-size: 0.7rem;
   }
 }

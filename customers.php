@@ -287,7 +287,7 @@ require __DIR__ . '/includes/header.php';
 <section class="bg-white rounded-xl shadow p-4 mt-4">
   <h2 class="font-semibold mb-3">Daftar Pelanggan</h2>
   <div class="overflow-auto table-wrap">
-    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="50">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">ID</th>
