@@ -39,7 +39,9 @@ if ($user['role'] === 'customer') {
         JOIN customers c ON c.id = mr.customer_id
         LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
         LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
-        WHERE mr.customer_id = :customer_id ORDER BY period_year DESC, period_month DESC LIMIT 6');
+        WHERE mr.customer_id = :customer_id
+        ORDER BY mr.period_year DESC, mr.period_month DESC
+        LIMIT 50');
     $stmt->execute([':customer_id' => $user['customer_id']]);
     $recentBills = $stmt->fetchAll();
 } else {
@@ -49,7 +51,9 @@ if ($user['role'] === 'customer') {
         JOIN customers c ON c.id = mr.customer_id
         LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
         LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
-        ORDER BY mr.created_at DESC LIMIT 10')->fetchAll();
+        ORDER BY mr.period_year DESC, mr.period_month DESC,
+            CASE WHEN c.customer_no IS NULL OR c.customer_no <= 0 THEN 999999 ELSE c.customer_no END ASC,
+            c.name ASC')->fetchAll();
 }
 
 $emptyColspan = 9;
@@ -78,9 +82,9 @@ require __DIR__ . '/includes/header.php';
 </div>
 
 <div class="bg-white rounded-xl shadow p-4">
-  <h2 class="text-lg font-semibold mb-3"><?= $user['role'] === 'customer' ? 'Riwayat Tagihan Saya' : 'Input/Tagihan Terbaru' ?></h2>
+  <h2 class="text-lg font-semibold mb-3"><?= $user['role'] === 'customer' ? 'Riwayat Tagihan Saya' : 'Daftar Tagihan Terdata' ?></h2>
   <div class="overflow-auto table-wrap">
-    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
+    <table class="min-w-full text-sm js-data-table table-soft" data-page-size="50">
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
