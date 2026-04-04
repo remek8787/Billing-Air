@@ -81,7 +81,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $stmt = $pdo->prepare('INSERT INTO customers(name, address, phone) VALUES(:name, :address, :phone)');
             $stmt->execute([':name' => $name, ':address' => $address, ':phone' => $phone]);
-            flash('success', 'Pelanggan baru ditambahkan.');
+
+            $newCustomerId = (int)$pdo->lastInsertId();
+            $autoUsername = autoCustomerUsername($pdo, $newCustomerId, $name, $address);
+            $autoPassword = autoCustomerPassword($newCustomerId);
+
+            $loginStmt = $pdo->prepare('INSERT INTO users(username, password_hash, role, full_name, customer_id)
+                VALUES(:username, :password_hash, "customer", :full_name, :customer_id)');
+            $loginStmt->execute([
+                ':username' => $autoUsername,
+                ':password_hash' => password_hash($autoPassword, PASSWORD_DEFAULT),
+                ':full_name' => $name,
+                ':customer_id' => $newCustomerId,
+            ]);
+
+            $newUserId = (int)$pdo->lastInsertId();
+            saveCustomerLoginSecret($newUserId, $autoPassword);
+
+            flash('success', 'Pelanggan baru ditambahkan + login otomatis dibuat. Username: ' . $autoUsername . ' | ID/Password: ' . $autoPassword);
         }
 
         header('Location: customers.php');
@@ -205,6 +222,7 @@ require __DIR__ . '/includes/header.php';
 
   <section class="bg-white rounded-xl shadow p-4">
     <h2 class="font-semibold mb-3">Buat Login Pelanggan</h2>
+    <p class="text-xs text-slate-500 mb-2">Catatan: saat tambah pelanggan baru (form kiri), login pelanggan sekarang dibuat otomatis. Form ini untuk kasus manual khusus.</p>
     <form method="post" class="space-y-3" id="customer-login-form">
       <input type="hidden" name="action" value="create_customer_login">
       <div>
