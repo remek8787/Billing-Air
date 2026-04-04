@@ -33,7 +33,7 @@ if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
 
 $recentBills = [];
 if ($user['role'] === 'customer') {
-    $stmt = $pdo->prepare('SELECT mr.*, c.name,
+    $stmt = $pdo->prepare('SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
             cls.password_plain AS customer_login_id
         FROM meter_readings mr
         JOIN customers c ON c.id = mr.customer_id
@@ -43,7 +43,7 @@ if ($user['role'] === 'customer') {
     $stmt->execute([':customer_id' => $user['customer_id']]);
     $recentBills = $stmt->fetchAll();
 } else {
-    $recentBills = $pdo->query('SELECT mr.*, c.name,
+    $recentBills = $pdo->query('SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
             cls.password_plain AS customer_login_id
         FROM meter_readings mr
         JOIN customers c ON c.id = mr.customer_id
@@ -52,7 +52,7 @@ if ($user['role'] === 'customer') {
         ORDER BY mr.created_at DESC LIMIT 10')->fetchAll();
 }
 
-$emptyColspan = $user['role'] === 'customer' ? 7 : 8;
+$emptyColspan = 9;
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -84,8 +84,9 @@ require __DIR__ . '/includes/header.php';
       <thead>
         <tr class="text-left border-b">
           <th class="py-2 pr-3">Periode</th>
-          <?php if ($user['role'] !== 'customer'): ?><th class="py-2 pr-3">Pelanggan</th><?php endif; ?>
           <th class="py-2 pr-3">ID Pelanggan</th>
+          <th class="py-2 pr-3">Nama</th>
+          <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">Meter Awal</th>
           <th class="py-2 pr-3">Meter Akhir</th>
           <th class="py-2 pr-3">Pemakaian</th>
@@ -97,7 +98,6 @@ require __DIR__ . '/includes/header.php';
         <?php foreach ($recentBills as $bill): ?>
           <tr class="border-b">
             <td class="py-2 pr-3"><?= e(periodLabel((int)$bill['period_month'], (int)$bill['period_year'])) ?></td>
-            <?php if ($user['role'] !== 'customer'): ?><td class="py-2 pr-3"><?= e($bill['name']) ?></td><?php endif; ?>
             <td class="py-2 pr-3">
               <?php
                 $idPelanggan = (string)($bill['customer_login_id'] ?? '');
@@ -107,6 +107,8 @@ require __DIR__ . '/includes/header.php';
               ?>
               <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e($idPelanggan !== '' ? $idPelanggan : '-') ?></code>
             </td>
+            <td class="py-2 pr-3"><?= e((string)($bill['customer_name'] ?? '-')) ?></td>
+            <td class="py-2 pr-3"><?= e((string)($bill['customer_address'] ?? '-')) ?></td>
             <td class="py-2 pr-3"><?= (int)$bill['meter_awal'] ?></td>
             <td class="py-2 pr-3"><?= (int)$bill['meter_akhir'] ?></td>
             <td class="py-2 pr-3"><?= (int)$bill['usage_m3'] ?> m³</td>
