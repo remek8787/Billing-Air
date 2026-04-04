@@ -171,8 +171,11 @@ if ($editId > 0) {
     $editCustomer = $stmt->fetch();
 }
 
-$customers = $pdo->query('SELECT c.*, u.username AS customer_username FROM customers c
+$customers = $pdo->query('SELECT c.*, u.username AS customer_username,
+        cls.password_plain AS customer_login_id
+    FROM customers c
     LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
+    LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
     ORDER BY c.id ASC')->fetchAll();
 
 require __DIR__ . '/includes/header.php';
@@ -222,10 +225,10 @@ require __DIR__ . '/includes/header.php';
         <input id="username" name="username" class="mt-1 w-full border rounded px-3 py-2" placeholder="otomatis saat pelanggan dipilih">
       </div>
       <div>
-        <label class="text-sm">Password Awal (format DSA + 4 digit)</label>
-        <input id="password" name="password" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: DSA0001">
+        <label class="text-sm">ID Pelanggan / Password Awal (format DSA + 4 digit)</label>
+        <input id="password" name="password" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: DSA0001 (ID pelanggan)">
       </div>
-      <p class="text-xs text-slate-500">Default otomatis: username dari nama+alamat, password = DSA + 4 digit ID pelanggan.</p>
+      <p class="text-xs text-slate-500">Default otomatis: username dari nama+alamat, ID pelanggan = password awal = DSA + 4 digit ID pelanggan.</p>
       <button class="bg-emerald-700 text-white rounded px-4 py-2">Buat Akun Pelanggan</button>
     </form>
   </section>
@@ -249,6 +252,7 @@ require __DIR__ . '/includes/header.php';
           <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">HP</th>
           <th class="py-2 pr-3">Login Pelanggan</th>
+          <th class="py-2 pr-3">ID Pelanggan</th>
           <th class="py-2 pr-3">Aksi</th>
         </tr>
       </thead>
@@ -260,6 +264,14 @@ require __DIR__ . '/includes/header.php';
           <td class="py-2 pr-3"><?= e($c['address']) ?></td>
           <td class="py-2 pr-3"><?= e($c['phone']) ?></td>
           <td class="py-2 pr-3"><?= e($c['customer_username'] ?? '-') ?></td>
+          <td class="py-2 pr-3">
+            <?php if (!empty($c['customer_login_id'])): ?>
+              <code class="px-2 py-1 rounded bg-slate-100 text-slate-800"><?= e((string)$c['customer_login_id']) ?></code>
+            <?php else: ?>
+              <code class="px-2 py-1 rounded bg-amber-50 text-amber-800"><?= e(defaultCustomerPasswordById((int)$c['id'])) ?></code>
+              <div class="text-xs text-slate-500 mt-1">default (jika akun login belum dibuat)</div>
+            <?php endif; ?>
+          </td>
           <td class="py-2 pr-3">
             <a class="px-2 py-1 rounded bg-slate-200" href="customers.php?edit=<?= (int)$c['id'] ?>">Edit</a>
             <?php if ($user['role'] === 'admin'): ?>
@@ -273,7 +285,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
       <?php endforeach; ?>
       <?php if (!$customers): ?>
-        <tr><td colspan="6" class="py-4 text-slate-500">Belum ada pelanggan.</td></tr>
+        <tr><td colspan="7" class="py-4 text-slate-500">Belum ada pelanggan.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>
