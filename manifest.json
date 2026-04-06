@@ -1,0 +1,20 @@
+{
+  "name": "Billing Swadaya AIR Denta",
+  "short_name": "AIR Denta",
+  "description": "Aplikasi billing air untuk admin, collector, dan pelanggan.",
+  "id": "./",
+  "start_url": "./index.php",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef2ff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

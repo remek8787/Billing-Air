@@ -1,6 +1,8 @@
 (() => {
   const THEME_KEY = 'billing_air_theme';
   const SIDEBAR_KEY = 'billing_air_sidebar';
+  const INSTALL_DISMISSED_KEY = 'billing_air_install_prompt_dismissed_at';
+  const INSTALL_INSTALLED_KEY = 'billing_air_install_installed';
   const body = document.body;
   const layout = document.getElementById('appLayout');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -168,8 +170,93 @@
     });
   };
 
+  const initInstallPrompt = () => {
+    const backdrop = document.getElementById('installPromptBackdrop');
+    const closeBtn = document.getElementById('installPromptClose');
+    const laterBtn = document.getElementById('installPromptLaterBtn');
+    const installBtn = document.getElementById('installPromptInstallBtn');
+    const noteBox = document.getElementById('installPromptNote');
+    const stepsBox = document.getElementById('installPromptSteps');
+
+    if (!backdrop || !installBtn || !laterBtn || !closeBtn) return;
+
+    let deferredPrompt = null;
+
+    const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isMobileLike = () => window.innerWidth <= 992 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const wasDismissedRecently = () => {
+      const raw = Number(localStorage.getItem(INSTALL_DISMISSED_KEY) || 0);
+      return raw > 0 && (Date.now() - raw) < (12 * 60 * 60 * 1000);
+    };
+
+    const showPrompt = (mode = 'manual') => {
+      if (isStandalone() || localStorage.getItem(INSTALL_INSTALLED_KEY) === '1' || !isMobileLike()) return;
+      if (wasDismissedRecently()) return;
+
+      installBtn.hidden = mode !== 'auto';
+      noteBox.hidden = mode === 'auto';
+      stepsBox.hidden = mode === 'auto';
+      backdrop.hidden = false;
+      document.body.style.overflow = 'hidden';
+    };
+
+    const hidePrompt = (remember = true) => {
+      backdrop.hidden = true;
+      document.body.style.overflow = '';
+      if (remember) {
+        localStorage.setItem(INSTALL_DISMISSED_KEY, String(Date.now()));
+      }
+    };
+
+    closeBtn.addEventListener('click', () => hidePrompt(true));
+    laterBtn.addEventListener('click', () => hidePrompt(true));
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) {
+        hidePrompt(true);
+      }
+    });
+
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        showPrompt('manual');
+        return;
+      }
+
+      deferredPrompt.prompt();
+      try {
+        await deferredPrompt.userChoice;
+      } catch (error) {
+        console.warn('Install prompt error:', error);
+      }
+      deferredPrompt = null;
+      hidePrompt(true);
+    });
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredPrompt = event;
+      setTimeout(() => showPrompt('auto'), 1400);
+    });
+
+    window.addEventListener('appinstalled', () => {
+      localStorage.setItem(INSTALL_INSTALLED_KEY, '1');
+      hidePrompt(false);
+    });
+
+    if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('service-worker.js').catch((error) => {
+          console.warn('SW register failed:', error);
+        });
+      });
+    }
+
+    setTimeout(() => showPrompt('manual'), 2400);
+  };
+
   initTheme();
   initSidebarMode();
   initDataTables();
   initLoader();
+  initInstallPrompt();
 })();
