@@ -70,141 +70,73 @@ $emptyColspan = 9;
 require __DIR__ . '/includes/header.php';
 ?>
 
-<section class="dashboard-hero-card mb-4">
-  <div class="dashboard-hero-grid">
-    <div>
-      <div class="dashboard-hero-kicker">Dashboard Aplikasi</div>
-      <h2 class="dashboard-hero-title">DENTA TIRTA</h2>
-      <p class="dashboard-hero-text">
-        Logo, pengumuman penting, tutorial penggunaan, dan langkah instalasi sekarang difokuskan di dashboard biar lebih rapi dan gampang dicari.
-      </p>
-      <div class="dashboard-hero-actions">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tutorialModal">
-          <i class="bi bi-journal-text me-2"></i>Tutorial
-        </button>
-        <button type="button" class="btn btn-outline-primary" data-open-install-guide="1">
-          <i class="bi bi-phone me-2"></i>Langkah Instalasi
-        </button>
-        <?php if ($user['role'] !== 'customer'): ?>
-          <a href="bills.php" class="btn btn-outline-secondary">
-            <i class="bi bi-receipt-cutoff me-2"></i>Lihat Tagihan
-          </a>
-        <?php else: ?>
-          <a href="bills.php" class="btn btn-outline-secondary">
-            <i class="bi bi-wallet2 me-2"></i>Lihat Tagihan Saya
-          </a>
-        <?php endif; ?>
+<section class="dashboard-hero-card mb-4 dashboard-hero-card--compact">
+  <div class="dashboard-hero-compact-row">
+    <div class="dashboard-hero-compact-main">
+      <div class="dashboard-hero-logo-inline">
+        <img src="assets/app-logo.svg" alt="Logo DENTA TIRTA" class="dashboard-hero-logo dashboard-hero-logo--mini">
+      </div>
+      <div>
+        <div class="dashboard-hero-kicker">Dashboard Aplikasi</div>
+        <h2 class="dashboard-hero-title dashboard-hero-title--compact">DENTA TIRTA</h2>
+        <p class="dashboard-hero-text dashboard-hero-text--compact">
+          Ringkas, fokus ke operasional harian, dan tombol penting tetap gampang dijangkau.
+        </p>
       </div>
     </div>
-    <div class="dashboard-hero-logo-wrap">
-      <img src="assets/app-logo.svg" alt="Logo DENTA TIRTA" class="dashboard-hero-logo">
+    <div class="dashboard-hero-actions dashboard-hero-actions--compact">
+      <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#tutorialModal">
+        <i class="bi bi-journal-text me-2"></i>Tutorial
+      </button>
+      <button type="button" class="btn btn-outline-primary" data-open-install-guide="1">
+        <i class="bi bi-phone me-2"></i>Install App
+      </button>
+      <?php if ($user['role'] !== 'customer'): ?>
+        <a href="bills.php" class="btn btn-outline-secondary">
+          <i class="bi bi-receipt-cutoff me-2"></i>Tagihan
+        </a>
+      <?php else: ?>
+        <a href="bills.php" class="btn btn-outline-secondary">
+          <i class="bi bi-wallet2 me-2"></i>Tagihan Saya
+        </a>
+      <?php endif; ?>
     </div>
   </div>
 </section>
 
 <section class="grid lg:grid-cols-2 gap-4 mb-4">
-  <div class="bg-white rounded-xl shadow p-4 dashboard-update-card">
-    <div class="dashboard-section-kicker">Update Terbaru</div>
-    <div class="dashboard-section-head">
+  <div class="bg-white rounded-xl shadow p-4 dashboard-update-card dashboard-update-card--compact">
+    <div class="dashboard-section-head dashboard-section-head--compact">
       <div>
-        <h3 class="dashboard-section-title">Improve kecil yang sudah aktif</h3>
-        <p class="dashboard-section-text">Ringkasan perubahan terbaru untuk memudahkan admin, collector, dan pelanggan saat pakai aplikasi.</p>
+        <div class="dashboard-section-kicker">Update Terbaru</div>
+        <h3 class="dashboard-section-title dashboard-section-title--compact">Yang sudah aktif</h3>
       </div>
       <span class="dashboard-update-badge">Live</span>
     </div>
-    <div class="dashboard-feature-grid">
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-calendar2-check"></i></div>
-        <div>
-          <div class="dashboard-feature-title">Tanggal pemasangan & pembayaran</div>
-          <div class="dashboard-feature-text">Data pelanggan dan riwayat pembayaran sekarang lebih jelas dibaca.</div>
-        </div>
-      </div>
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-percent"></i></div>
-        <div>
-          <div class="dashboard-feature-title">Diskon pembayaran opsional</div>
-          <div class="dashboard-feature-text">Bisa isi nominal diskon langsung saat tandai lunas atau update pembayaran.</div>
-        </div>
-      </div>
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-receipt-cutoff"></i></div>
-        <div>
-          <div class="dashboard-feature-title">Nota tagihan & kwitansi lunas</div>
-          <div class="dashboard-feature-text">Admin dan pelanggan bisa cetak tagihan, lalu cetak kwitansi jika status sudah lunas.</div>
-        </div>
-      </div>
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-person-vcard"></i></div>
-        <div>
-          <div class="dashboard-feature-title">ID pelanggan makin konsisten</div>
-          <div class="dashboard-feature-text">ID Pelanggan tampil lebih luas, dan tetap mengikuti format DSA + 4 digit.</div>
-        </div>
-      </div>
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-search"></i></div>
-        <div>
-          <div class="dashboard-feature-title">Pencarian data lebih cepat</div>
-          <div class="dashboard-feature-text">Tabel dan pemilihan pelanggan sudah mendukung pencarian supaya input tidak ribet.</div>
-        </div>
-      </div>
-      <div class="dashboard-feature-item">
-        <div class="dashboard-feature-icon"><i class="bi bi-phone"></i></div>
-        <div>
-          <div class="dashboard-feature-title">Dashboard fokus + install guide</div>
-          <div class="dashboard-feature-text">Tutorial, info fitur, dan panduan pasang ke layar utama sekarang dipusatkan di dashboard.</div>
-        </div>
-      </div>
-    </div>
+    <ul class="dashboard-bullet-list">
+      <li>Tanggal pemasangan pelanggan sudah tampil lebih jelas.</li>
+      <li>Tanggal pembayaran + diskon opsional sudah siap dipakai.</li>
+      <li>Nota tagihan dan kwitansi lunas sudah tersedia.</li>
+      <li>ID pelanggan format DSA makin konsisten di banyak halaman.</li>
+      <li>Pencarian pelanggan dan data lebih cepat.</li>
+    </ul>
   </div>
 
-  <div class="bg-white rounded-xl shadow p-4 dashboard-update-card">
-    <div class="dashboard-section-kicker">Cara Pakai</div>
-    <div class="dashboard-section-head">
+  <div class="bg-white rounded-xl shadow p-4 dashboard-update-card dashboard-update-card--compact">
+    <div class="dashboard-section-head dashboard-section-head--compact">
       <div>
-        <h3 class="dashboard-section-title">Alur penggunaan cepat</h3>
-        <p class="dashboard-section-text">Urutan singkat biar kerja admin/collector lebih rapi dan pelanggan juga gampang cek tagihan.</p>
+        <div class="dashboard-section-kicker">Cara Pakai</div>
+        <h3 class="dashboard-section-title dashboard-section-title--compact">Alur cepat</h3>
       </div>
     </div>
-    <div class="dashboard-flow-list">
-      <div class="dashboard-flow-item">
-        <span class="dashboard-flow-no">1</span>
-        <div>
-          <div class="dashboard-flow-title">Tambah pelanggan</div>
-          <div class="dashboard-flow-text">Isi nama, alamat, no HP, dan tanggal pemasangan di menu <b>Pelanggan</b>.</div>
-        </div>
-      </div>
-      <div class="dashboard-flow-item">
-        <span class="dashboard-flow-no">2</span>
-        <div>
-          <div class="dashboard-flow-title">Input meter bulanan</div>
-          <div class="dashboard-flow-text">Masuk menu <b>Input Meter</b>, pilih pelanggan, lalu isi meter akhir periode berjalan.</div>
-        </div>
-      </div>
-      <div class="dashboard-flow-item">
-        <span class="dashboard-flow-no">3</span>
-        <div>
-          <div class="dashboard-flow-title">Cek dan proses tagihan</div>
-          <div class="dashboard-flow-text">Di menu <b>Tagihan</b>, cek total, isi tanggal bayar, metode bayar, dan diskon opsional kalau ada.</div>
-        </div>
-      </div>
-      <div class="dashboard-flow-item">
-        <span class="dashboard-flow-no">4</span>
-        <div>
-          <div class="dashboard-flow-title">Cetak dokumen pembayaran</div>
-          <div class="dashboard-flow-text">Gunakan tombol <b>Cetak Tagihan</b> untuk nota dan <b>Kwitansi</b> untuk pembayaran yang sudah lunas.</div>
-        </div>
-      </div>
-      <div class="dashboard-flow-item">
-        <span class="dashboard-flow-no">5</span>
-        <div>
-          <div class="dashboard-flow-title">Pelanggan tinggal login</div>
-          <div class="dashboard-flow-text">Pelanggan bisa cek riwayat pemakaian, status bayar, dan cetak dokumen sendiri dari akun masing-masing.</div>
-        </div>
-      </div>
-    </div>
+    <ol class="dashboard-inline-steps">
+      <li><b>Pelanggan</b> → tambah data + tanggal pemasangan</li>
+      <li><b>Input Meter</b> → isi meter akhir bulanan</li>
+      <li><b>Tagihan</b> → proses bayar, diskon, cetak nota</li>
+      <li><b>Kwitansi</b> → muncul untuk tagihan yang sudah lunas</li>
+    </ol>
 
-    <div class="dashboard-shortcuts">
+    <div class="dashboard-shortcuts dashboard-shortcuts--compact">
       <?php if ($user['role'] !== 'customer'): ?>
         <a href="customers.php" class="dashboard-shortcut-card">
           <i class="bi bi-people"></i>

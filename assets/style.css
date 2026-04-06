@@ -334,10 +334,35 @@ table td, table th {
   margin-top: 1rem;
 }
 
-.dashboard-hero-logo-wrap {
+.dashboard-hero-card--compact {
+  padding: 0.9rem 1rem;
+}
+
+.dashboard-hero-compact-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-hero-compact-main {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.dashboard-hero-logo-inline {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--card) 94%, #eff6ff 6%);
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .dashboard-hero-logo {
@@ -347,12 +372,42 @@ table td, table th {
   filter: drop-shadow(0 12px 24px rgba(37, 99, 235, 0.14));
 }
 
+.dashboard-hero-logo--mini {
+  width: 32px;
+  max-height: 32px;
+  filter: none;
+}
+
+.dashboard-hero-title--compact {
+  font-size: 1.2rem;
+  margin-top: 0.15rem;
+}
+
+.dashboard-hero-text--compact {
+  margin-top: 0.2rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.dashboard-hero-actions--compact {
+  margin-top: 0;
+  align-items: center;
+}
+
 .dashboard-section-head {
   display: flex;
   justify-content: space-between;
   gap: 0.75rem;
   align-items: flex-start;
   margin-bottom: 1rem;
+}
+
+.dashboard-section-head--compact {
+  margin-bottom: 0.75rem;
+}
+
+.dashboard-section-title--compact {
+  font-size: 1.15rem;
 }
 
 .dashboard-update-badge {
@@ -375,6 +430,23 @@ table td, table th {
 
 .dashboard-feature-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dashboard-update-card--compact {
+  min-height: auto;
+}
+
+.dashboard-bullet-list,
+.dashboard-inline-steps {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.dashboard-bullet-list li,
+.dashboard-inline-steps li {
+  margin-bottom: 0.38rem;
 }
 
 .dashboard-feature-item,
@@ -439,6 +511,10 @@ table td, table th {
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.dashboard-shortcuts--compact {
+  margin-top: 0.9rem;
 }
 
 .dashboard-shortcut-card {
@@ -1274,6 +1350,11 @@ body[data-theme="dark"] .install-step-icon {
     grid-template-columns: 1fr;
   }
 
+  .dashboard-hero-compact-row,
+  .dashboard-hero-compact-main {
+    align-items: flex-start;
+  }
+
   .stats-grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -1402,6 +1483,15 @@ body[data-theme="dark"] .install-step-icon {
   .dashboard-flow-item,
   .tutorial-step-card {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-hero-compact-main {
+    width: 100%;
+  }
+
+  .dashboard-hero-actions--compact {
+    width: 100%;
+    margin-top: 0.2rem;
   }
 
   .dashboard-feature-icon,
