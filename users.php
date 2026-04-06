@@ -217,7 +217,7 @@ require __DIR__ . '/includes/header.php';
   <section class="bg-white rounded-xl shadow p-4 lg:col-span-2">
     <h2 class="font-semibold mb-3">User Admin / Collector</h2>
     <div class="overflow-auto">
-      <table class="min-w-full text-sm js-data-table" data-page-size="10">
+      <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
         <thead>
           <tr class="text-left border-b">
             <th class="py-2 pr-3">ID</th>
@@ -290,11 +290,11 @@ require __DIR__ . '/includes/header.php';
           </td>
           <td class="py-2 pr-3 text-xs text-slate-500"><?= e($cu['password_updated_at'] ?? '-') ?></td>
           <td class="py-2 pr-3">
-            <form method="post" class="space-y-2 mb-2">
+            <form method="post" class="space-y-2 mb-2 mobile-form-actions">
               <input type="hidden" name="action" value="update_customer_login">
               <input type="hidden" name="id" value="<?= (int)$cu['id'] ?>">
-              <input name="username" value="<?= e($cu['username']) ?>" class="border rounded px-2 py-1 w-44" required>
-              <input name="password" placeholder="opsional: DSA0001" class="border rounded px-2 py-1 w-40">
+              <input name="username" value="<?= e($cu['username']) ?>" class="border rounded px-2 py-1 w-full md:w-44" required>
+              <input name="password" placeholder="opsional: DSA0001" class="border rounded px-2 py-1 w-full md:w-40">
               <button class="px-2 py-1 rounded bg-slate-200">Simpan</button>
             </form>
             <form method="post" class="inline" onsubmit="return confirm('Reset password ke default DSA+4 digit?')">

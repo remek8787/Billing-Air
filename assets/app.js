@@ -104,6 +104,21 @@
       const tbody = table.querySelector('tbody');
       if (!tbody) return;
 
+      const headers = Array.from(table.querySelectorAll('thead th')).map((th) => (th.textContent || '').trim());
+      if (table.dataset.mobileStack !== 'off') {
+        table.classList.add('table-card-mode');
+      }
+
+      Array.from(tbody.querySelectorAll('tr')).forEach((row) => {
+        const cells = Array.from(row.querySelectorAll('td'));
+        cells.forEach((cell, index) => {
+          if (cell.hasAttribute('colspan')) return;
+          if (!cell.dataset.label && headers[index]) {
+            cell.dataset.label = headers[index];
+          }
+        });
+      });
+
       const rows = Array.from(tbody.querySelectorAll('tr')).filter((tr) => !tr.querySelector('td[colspan]'));
       if (rows.length === 0) return;
 

@@ -90,7 +90,7 @@ require __DIR__ . '/includes/header.php';
         <p class="text-xs text-slate-500 mt-1">Format tampil: ID Pelanggan • Nama</p>
       </div>
 
-      <div class="grid grid-cols-2 gap-2">
+      <div class="grid md:grid-cols-2 gap-2">
         <div>
           <label class="text-sm">Bulan</label>
           <select name="period_month" required class="mt-1 w-full border rounded px-3 py-2">
@@ -110,7 +110,7 @@ require __DIR__ . '/includes/header.php';
         <input type="number" min="0" name="meter_akhir" required class="mt-1 w-full border rounded px-3 py-2" placeholder="Contoh: 1250" value="<?= $meterAkhirValue > 0 ? $meterAkhirValue : '' ?>">
       </div>
 
-      <div class="d-flex gap-2 flex-wrap">
+      <div class="d-flex gap-2 flex-wrap mobile-form-actions">
         <button class="bg-slate-900 text-white rounded px-4 py-2"><?= $editReading ? 'Update Meter' : 'Simpan Input Meter' ?></button>
         <?php if ($editReading): ?>
           <a class="btn btn-outline-secondary btn-sm" href="readings.php">Batal Edit</a>
