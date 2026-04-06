@@ -14,37 +14,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $id = (int)($_POST['id'] ?? 0);
 
-    if ($id > 0 && $action === 'mark_paid') {
+    $billStmt = $pdo->prepare('SELECT * FROM meter_readings WHERE id = :id LIMIT 1');
+    $billStmt->execute([':id' => $id]);
+    $currentBill = $billStmt->fetch() ?: null;
+
+    if ($id > 0 && $currentBill && $action === 'mark_paid') {
         $paymentMethod = trim((string)($_POST['payment_method'] ?? 'cash'));
         $paymentNote = trim((string)($_POST['payment_note'] ?? ''));
+        $paymentDate = paymentDateToDateTime($_POST['payment_date'] ?? null);
+        $discountAmount = min(
+            normalizeCurrencyInput($_POST['discount_amount'] ?? 0),
+            (int)$currentBill['amount_total']
+        );
 
         if (!in_array($paymentMethod, ['cash', 'transfer'], true)) {
             $paymentMethod = 'cash';
         }
 
         $stmt = $pdo->prepare('UPDATE meter_readings
-            SET status = "paid", paid_at = :paid_at, payment_method = :payment_method, payment_note = :payment_note
+            SET status = "paid", paid_at = :paid_at, payment_method = :payment_method,
+                payment_note = :payment_note, discount_amount = :discount_amount
             WHERE id = :id');
         $stmt->execute([
             ':id' => $id,
-            ':paid_at' => date('Y-m-d H:i:s'),
+            ':paid_at' => $paymentDate,
             ':payment_method' => $paymentMethod,
             ':payment_note' => $paymentNote,
+            ':discount_amount' => $discountAmount,
         ]);
         flash('success', 'Tagihan ditandai lunas (' . strtoupper($paymentMethod) . ').');
     }
 
-    if ($id > 0 && $action === 'mark_unpaid') {
+    if ($id > 0 && $currentBill && $action === 'mark_unpaid') {
         $stmt = $pdo->prepare('UPDATE meter_readings
-            SET status = "unpaid", paid_at = NULL, payment_method = NULL, payment_note = NULL
+            SET status = "unpaid", paid_at = NULL, payment_method = NULL,
+                payment_note = NULL, discount_amount = 0
             WHERE id = :id');
         $stmt->execute([':id' => $id]);
         flash('success', 'Tagihan dikembalikan ke belum lunas.');
     }
 
-    if ($id > 0 && $action === 'update_payment') {
+    if ($id > 0 && $currentBill && $action === 'update_payment') {
         $paymentMethod = trim((string)($_POST['payment_method'] ?? ''));
         $paymentNote = trim((string)($_POST['payment_note'] ?? ''));
+        $paymentDate = paymentDateToDateTime($_POST['payment_date'] ?? null, (string)($currentBill['paid_at'] ?? ''));
+        $discountAmount = min(
+            normalizeCurrencyInput($_POST['discount_amount'] ?? 0),
+            (int)$currentBill['amount_total']
+        );
 
         if (!in_array($paymentMethod, ['cash', 'transfer'], true)) {
             flash('error', 'Metode pembayaran harus cash atau transfer.');
@@ -53,14 +70,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $stmt = $pdo->prepare('UPDATE meter_readings
-            SET payment_method = :payment_method, payment_note = :payment_note
+            SET payment_method = :payment_method, payment_note = :payment_note,
+                paid_at = :paid_at, discount_amount = :discount_amount
             WHERE id = :id');
         $stmt->execute([
             ':id' => $id,
             ':payment_method' => $paymentMethod,
             ':payment_note' => $paymentNote,
+            ':paid_at' => $paymentDate,
+            ':discount_amount' => $discountAmount,
         ]);
-        flash('success', 'Metode pembayaran berhasil diperbarui.');
+        flash('success', 'Pembayaran berhasil diperbarui.');
     }
 
     header('Location: bills.php');
@@ -95,6 +115,7 @@ if ($filterMonth >= 1 && $filterMonth <= 12) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
+        c.installation_date,
         u.username AS customer_username,
         cls.password_plain AS customer_login_id
     FROM meter_readings mr
@@ -129,9 +150,10 @@ $emptyColspan = 14;
 $totalAmount = 0;
 $totalUnpaid = 0;
 foreach ($bills as $bill) {
-    $totalAmount += (int)$bill['amount_total'];
+    $finalAmount = billNetAmount($bill);
+    $totalAmount += $finalAmount;
     if ($bill['status'] === 'unpaid') {
-        $totalUnpaid += (int)$bill['amount_total'];
+        $totalUnpaid += $finalAmount;
     }
 }
 
@@ -178,14 +200,14 @@ require __DIR__ . '/includes/header.php';
           <th class="py-2 pr-3">ID Pelanggan</th>
           <th class="py-2 pr-3">Nama</th>
           <th class="py-2 pr-3">Alamat</th>
-          <th class="py-2 pr-3">Awal</th>
-          <th class="py-2 pr-3">Akhir</th>
-          <th class="py-2 pr-3">Pemakaian</th>
-          <th class="py-2 pr-3">Abonemen</th>
-          <th class="py-2 pr-3">Tarif/m³</th>
-          <th class="py-2 pr-3">Total</th>
+          <th class="py-2 pr-3">Tgl Pasang</th>
+          <th class="py-2 pr-3">Meter</th>
+          <th class="py-2 pr-3">Tagihan</th>
+          <th class="py-2 pr-3">Diskon</th>
+          <th class="py-2 pr-3">Total Bayar</th>
           <th class="py-2 pr-3">Status</th>
-          <th class="py-2 pr-3">Metode Bayar</th>
+          <th class="py-2 pr-3">Tgl Bayar</th>
+          <th class="py-2 pr-3">Pembayaran</th>
           <th class="py-2 pr-3">Jatuh Tempo</th>
           <th class="py-2 pr-3">Aksi</th>
         </tr>
@@ -195,26 +217,31 @@ require __DIR__ . '/includes/header.php';
         <tr class="border-b">
           <td class="py-2 pr-3"><?= e(periodLabel((int)$bill['period_month'], (int)$bill['period_year'])) ?></td>
           <td class="py-2 pr-3">
-            <?php
-              $idPelanggan = (string)($bill['customer_login_id'] ?? '');
-              if ($idPelanggan === '') {
-                  $idPelanggan = defaultCustomerPasswordById((int)$bill['customer_id']);
-              }
-            ?>
+            <?php $idPelanggan = customerLoginId((string)($bill['customer_login_id'] ?? ''), (int)$bill['customer_id']); ?>
             <span class="id-pill"><?= e($idPelanggan) ?></span>
           </td>
           <td class="py-2 pr-3"><div class="name-cell"><?= e((string)$bill['customer_name']) ?></div></td>
           <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)($bill['customer_address'] ?? '-')) ?>"><?= e((string)($bill['customer_address'] ?? '-')) ?></div></td>
-          <td class="py-2 pr-3"><?= (int)$bill['meter_awal'] ?></td>
-          <td class="py-2 pr-3"><?= (int)$bill['meter_akhir'] ?></td>
-          <td class="py-2 pr-3"><?= (int)$bill['usage_m3'] ?> m³</td>
-          <td class="py-2 pr-3"><?= e(rupiah((int)$bill['base_fee'])) ?></td>
-          <td class="py-2 pr-3"><?= e(rupiah((int)$bill['price_per_m3'])) ?></td>
-          <td class="py-2 pr-3 font-semibold"><?= e(rupiah((int)$bill['amount_total'])) ?></td>
+          <td class="py-2 pr-3"><?= e(formatDateId((string)($bill['installation_date'] ?? ''), '-')) ?></td>
+          <td class="py-2 pr-3">
+            <div><b>Awal:</b> <?= (int)$bill['meter_awal'] ?></div>
+            <div><b>Akhir:</b> <?= (int)$bill['meter_akhir'] ?></div>
+            <div class="text-xs text-slate-500"><b>Pakai:</b> <?= (int)$bill['usage_m3'] ?> m³</div>
+          </td>
+          <td class="py-2 pr-3">
+            <div class="font-semibold"><?= e(rupiah((int)$bill['amount_total'])) ?></div>
+            <div class="text-xs text-slate-500">Abonemen <?= e(rupiah((int)$bill['base_fee'])) ?></div>
+            <div class="text-xs text-slate-500">Tarif <?= e(rupiah((int)$bill['price_per_m3'])) ?>/m³</div>
+          </td>
+          <td class="py-2 pr-3"><?= e(rupiah(billDiscountAmount($bill))) ?></td>
+          <td class="py-2 pr-3 font-semibold text-emerald-700"><?= e(rupiah(billNetAmount($bill))) ?></td>
           <td class="py-2 pr-3">
             <span class="status-pill <?= $bill['status'] === 'paid' ? 'paid' : 'unpaid' ?>">
               <?= $bill['status'] === 'paid' ? 'Lunas' : 'Belum Lunas' ?>
             </span>
+          </td>
+          <td class="py-2 pr-3">
+            <?= e(formatDateId((string)($bill['paid_at'] ?? ''), '-')) ?>
           </td>
           <td class="py-2 pr-3">
             <?php if (!empty($bill['payment_method'])): ?>
@@ -237,6 +264,8 @@ require __DIR__ . '/includes/header.php';
                     <option value="cash">Cash</option>
                     <option value="transfer">Transfer</option>
                   </select>
+                  <input type="date" name="payment_date" value="<?= e(date('Y-m-d')) ?>" class="border rounded px-2 py-1 text-xs w-36">
+                  <input type="number" min="0" max="<?= (int)$bill['amount_total'] ?>" name="discount_amount" value="0" class="border rounded px-2 py-1 text-xs w-28" placeholder="diskon">
                   <input name="payment_note" class="border rounded px-2 py-1 text-xs w-36" placeholder="catatan opsional">
                   <button class="px-2 py-1 rounded bg-emerald-100 text-emerald-700 text-xs">Tandai Lunas</button>
                 </form>
@@ -248,17 +277,25 @@ require __DIR__ . '/includes/header.php';
                     <option value="cash" <?= ($bill['payment_method'] ?? '') === 'cash' ? 'selected' : '' ?>>Cash</option>
                     <option value="transfer" <?= ($bill['payment_method'] ?? '') === 'transfer' ? 'selected' : '' ?>>Transfer</option>
                   </select>
+                  <input type="date" name="payment_date" value="<?= e(dateInputValue((string)($bill['paid_at'] ?? ''))) ?>" class="border rounded px-2 py-1 text-xs w-36">
+                  <input type="number" min="0" max="<?= (int)$bill['amount_total'] ?>" name="discount_amount" value="<?= billDiscountAmount($bill) ?>" class="border rounded px-2 py-1 text-xs w-28" placeholder="diskon">
                   <input name="payment_note" value="<?= e((string)($bill['payment_note'] ?? '')) ?>" class="border rounded px-2 py-1 text-xs w-36" placeholder="catatan opsional">
                   <button class="px-2 py-1 rounded bg-slate-100 text-slate-700 text-xs">Update Bayar</button>
                 </form>
-                <form method="post" class="inline">
-                  <input type="hidden" name="action" value="mark_unpaid">
-                  <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
-                  <button class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs">Batalkan Lunas</button>
-                </form>
+                <div class="flex flex-wrap gap-1">
+                  <a class="px-2 py-1 rounded bg-sky-100 text-sky-700 text-xs" href="receipt.php?id=<?= (int)$bill['id'] ?>" target="_blank" rel="noopener">Kwitansi</a>
+                  <form method="post" class="inline">
+                    <input type="hidden" name="action" value="mark_unpaid">
+                    <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
+                    <button class="px-2 py-1 rounded bg-amber-100 text-amber-700 text-xs">Batalkan Lunas</button>
+                  </form>
+                </div>
               <?php endif; ?>
             <?php else: ?>
-              <?= !empty($bill['payment_method']) ? e(strtoupper((string)$bill['payment_method'])) : '-' ?>
+              <div><?= !empty($bill['payment_method']) ? e(strtoupper((string)$bill['payment_method'])) : '-' ?></div>
+              <?php if ($bill['status'] === 'paid'): ?>
+                <a class="inline-block mt-1 px-2 py-1 rounded bg-sky-100 text-sky-700 text-xs" href="receipt.php?id=<?= (int)$bill['id'] ?>" target="_blank" rel="noopener">Kwitansi</a>
+              <?php endif; ?>
             <?php endif; ?>
           </td>
         </tr>

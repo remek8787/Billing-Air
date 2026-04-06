@@ -141,6 +141,114 @@ function periodLabel(int $month, int $year): string
     return monthName($month) . ' ' . $year;
 }
 
+function customerLoginId(?string $loginId, int $customerId): string
+{
+    $loginId = trim((string)$loginId);
+    return $loginId !== '' ? $loginId : defaultCustomerPasswordById($customerId);
+}
+
+function normalizeCurrencyInput($value): int
+{
+    if (is_int($value)) {
+        return max(0, $value);
+    }
+
+    $raw = trim((string)$value);
+    if ($raw === '') {
+        return 0;
+    }
+
+    $normalized = preg_replace('/[^0-9\-]/', '', $raw) ?? '0';
+    return max(0, (int)$normalized);
+}
+
+function normalizeDateInput(?string $value): ?string
+{
+    $value = trim((string)$value);
+    if ($value === '') {
+        return null;
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false) {
+        return null;
+    }
+
+    return date('Y-m-d', $timestamp);
+}
+
+function paymentDateToDateTime(?string $value, ?string $fallback = null): string
+{
+    $date = normalizeDateInput($value);
+    if ($date !== null) {
+        return $date . ' 00:00:00';
+    }
+
+    if ($fallback) {
+        return $fallback;
+    }
+
+    return date('Y-m-d H:i:s');
+}
+
+function dateInputValue(?string $value): string
+{
+    $date = normalizeDateInput($value);
+    return $date ?? '';
+}
+
+function formatDateId(?string $value, string $fallback = '-'): string
+{
+    $value = trim((string)$value);
+    if ($value === '') {
+        return $fallback;
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false) {
+        return $value;
+    }
+
+    return date('d-m-Y', $timestamp);
+}
+
+function formatDateTimeId(?string $value, string $fallback = '-'): string
+{
+    $value = trim((string)$value);
+    if ($value === '') {
+        return $fallback;
+    }
+
+    $timestamp = strtotime($value);
+    if ($timestamp === false) {
+        return $value;
+    }
+
+    return date('d-m-Y H:i', $timestamp);
+}
+
+function billDiscountAmount(array $bill): int
+{
+    $discount = normalizeCurrencyInput($bill['discount_amount'] ?? 0);
+    $amountTotal = max(0, (int)($bill['amount_total'] ?? 0));
+    return min($discount, $amountTotal);
+}
+
+function billNetAmount(array $bill): int
+{
+    return max(0, (int)($bill['amount_total'] ?? 0) - billDiscountAmount($bill));
+}
+
+function receiptNumber(array $bill): string
+{
+    $year = (int)($bill['period_year'] ?? 0);
+    $month = (int)($bill['period_month'] ?? 0);
+    $customerId = (int)($bill['customer_id'] ?? 0);
+    $billId = (int)($bill['id'] ?? 0);
+
+    return sprintf('KWT/%04d%02d/%04d/%04d', $year, $month, $customerId, $billId);
+}
+
 function previousMeterEnd(int $customerId, int $month, int $year): int
 {
     $stmt = db()->prepare('SELECT meter_akhir, period_year, period_month FROM meter_readings WHERE customer_id = :customer_id');
