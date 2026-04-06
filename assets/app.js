@@ -333,7 +333,7 @@
 
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('service-worker.js').catch((error) => {
+        navigator.serviceWorker.register('sw.js').catch((error) => {
           console.warn('SW register failed:', error);
         });
       });
