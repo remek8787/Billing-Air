@@ -249,6 +249,75 @@ function receiptNumber(array $bill): string
     return sprintf('KWT/%04d%02d/%04d/%04d', $year, $month, $customerId, $billId);
 }
 
+function currentAnnouncementAudience(): array
+{
+    $user = currentUser();
+    $audiences = ['all'];
+
+    if (!$user) {
+        return $audiences;
+    }
+
+    if (($user['role'] ?? '') === 'customer') {
+        $audiences[] = 'customer';
+    } else {
+        $audiences[] = 'staff';
+    }
+
+    return $audiences;
+}
+
+function activeAnnouncements(): array
+{
+    $audiences = currentAnnouncementAudience();
+    $placeholders = implode(', ', array_fill(0, count($audiences), '?'));
+
+    $stmt = db()->prepare('SELECT * FROM announcements
+        WHERE is_active = 1 AND audience IN (' . $placeholders . ')
+        ORDER BY id DESC, updated_at DESC');
+    $stmt->execute($audiences);
+
+    return $stmt->fetchAll();
+}
+
+function latestPopupAnnouncement(): ?array
+{
+    foreach (activeAnnouncements() as $announcement) {
+        if ((int)($announcement['is_popup'] ?? 0) === 1) {
+            return $announcement;
+        }
+    }
+
+    return null;
+}
+
+function announcementLevelClass(string $level): string
+{
+    if ($level === 'success') {
+        return 'announcement-success';
+    }
+    if ($level === 'warning') {
+        return 'announcement-warning';
+    }
+    if ($level === 'danger') {
+        return 'announcement-danger';
+    }
+
+    return 'announcement-info';
+}
+
+function announcementAudienceLabel(string $audience): string
+{
+    if ($audience === 'customer') {
+        return 'Khusus Pelanggan';
+    }
+    if ($audience === 'staff') {
+        return 'Admin + Collector';
+    }
+
+    return 'Semua User';
+}
+
 function previousMeterEnd(int $customerId, int $month, int $year): int
 {
     $stmt = db()->prepare('SELECT meter_akhir, period_year, period_month FROM meter_readings WHERE customer_id = :customer_id');

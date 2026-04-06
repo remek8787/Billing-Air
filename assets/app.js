@@ -3,6 +3,7 @@
   const SIDEBAR_KEY = 'billing_air_sidebar';
   const INSTALL_DISMISSED_KEY = 'billing_air_install_prompt_dismissed_at';
   const INSTALL_INSTALLED_KEY = 'billing_air_install_installed';
+  const ANNOUNCEMENT_DISMISS_PREFIX = 'billing_air_announcement_dismissed_';
   const body = document.body;
   const layout = document.getElementById('appLayout');
   const sidebarToggle = document.getElementById('sidebarToggle');
@@ -331,9 +332,43 @@
     setTimeout(() => showPrompt('manual'), 2400);
   };
 
+  const initAnnouncementPopup = () => {
+    const backdrop = document.getElementById('announcementPopupBackdrop');
+    const closeBtn = document.getElementById('announcementPopupClose');
+    const okBtn = document.getElementById('announcementPopupOk');
+    const card = backdrop?.querySelector('[data-announcement-id]');
+    if (!backdrop || !closeBtn || !okBtn || !card) return;
+
+    const announcementId = card.dataset.announcementId || '';
+    const dismissKey = ANNOUNCEMENT_DISMISS_PREFIX + announcementId;
+    if (announcementId && localStorage.getItem(dismissKey) === '1') {
+      return;
+    }
+
+    const hide = () => {
+      backdrop.hidden = true;
+      document.body.style.overflow = '';
+      if (announcementId) {
+        localStorage.setItem(dismissKey, '1');
+      }
+    };
+
+    setTimeout(() => {
+      backdrop.hidden = false;
+      document.body.style.overflow = 'hidden';
+    }, 900);
+
+    closeBtn.addEventListener('click', hide);
+    okBtn.addEventListener('click', hide);
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) hide();
+    });
+  };
+
   initTheme();
   initSidebarMode();
   initDataTables();
   initLoader();
   initInstallPrompt();
+  initAnnouncementPopup();
 })();

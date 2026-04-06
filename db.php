@@ -87,6 +87,22 @@ function initializeDatabase(PDO $pdo): void
         )'
     );
 
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS announcements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            audience TEXT NOT NULL DEFAULT "all" CHECK(audience IN ("all", "customer", "staff")),
+            level TEXT NOT NULL DEFAULT "info" CHECK(level IN ("info", "success", "warning", "danger")),
+            is_popup INTEGER NOT NULL DEFAULT 1,
+            is_active INTEGER NOT NULL DEFAULT 1,
+            created_by INTEGER,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
+        )'
+    );
+
     ensureTableColumn($pdo, 'meter_readings', 'payment_method', 'TEXT');
     ensureTableColumn($pdo, 'meter_readings', 'payment_note', 'TEXT');
     ensureTableColumn($pdo, 'meter_readings', 'discount_amount', 'INTEGER NOT NULL DEFAULT 0');

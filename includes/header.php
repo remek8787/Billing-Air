@@ -2,6 +2,8 @@
 $flash = getFlash();
 $user = currentUser();
 $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
+$activeAnnouncements = activeAnnouncements();
+$popupAnnouncement = latestPopupAnnouncement();
 ?>
 <!doctype html>
 <html lang="id">
@@ -63,6 +65,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
   <div class="app-content-wrap">
     <header class="app-topbar">
       <div class="d-flex align-items-center gap-2">
+        <img src="assets/app-logo.svg" alt="DENTA TIRTA" class="topbar-logo">
         <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle" type="button" title="Hide/Show Sidebar"><i class="bi bi-layout-sidebar"></i></button>
         <span class="small text-secondary">DENTA TIRTA</span>
       </div>
@@ -78,8 +81,46 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
     </header>
 
     <main class="app-main">
+      <?php if ($activeAnnouncements): ?>
+        <?php foreach (array_slice($activeAnnouncements, 0, 1) as $notice): ?>
+          <div class="announcement-banner <?= e(announcementLevelClass((string)($notice['level'] ?? 'info'))) ?> mb-4">
+            <div class="announcement-banner-icon"><i class="bi bi-megaphone-fill"></i></div>
+            <div class="announcement-banner-content">
+              <div class="announcement-banner-title"><?= e((string)$notice['title']) ?></div>
+              <div class="announcement-banner-text"><?= nl2br(e((string)$notice['message'])) ?></div>
+            </div>
+            <div class="announcement-banner-audience"><?= e(announcementAudienceLabel((string)($notice['audience'] ?? 'all'))) ?></div>
+          </div>
+        <?php endforeach; ?>
+      <?php endif; ?>
+
       <?php if ($flash): ?>
         <div class="mb-4 px-4 py-3 rounded text-sm <?= $flash['type'] === 'error' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' ?>">
           <?= e($flash['message']) ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if ($popupAnnouncement): ?>
+        <div class="app-popup-backdrop" id="announcementPopupBackdrop" hidden>
+          <div class="app-popup-card <?= e(announcementLevelClass((string)($popupAnnouncement['level'] ?? 'info'))) ?>" role="dialog" aria-modal="true" aria-labelledby="announcementPopupTitle" data-announcement-id="<?= (int)$popupAnnouncement['id'] ?>">
+            <div class="app-popup-head">
+              <div>
+                <div class="app-popup-kicker">Pengumuman Aplikasi</div>
+                <div class="app-popup-title" id="announcementPopupTitle"><?= e((string)$popupAnnouncement['title']) ?></div>
+              </div>
+              <button type="button" class="app-popup-close" id="announcementPopupClose" aria-label="Tutup pengumuman">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+            <div class="app-popup-body">
+              <div class="app-popup-text"><?= nl2br(e((string)$popupAnnouncement['message'])) ?></div>
+              <div class="app-popup-meta">
+                Ditujukan untuk: <b><?= e(announcementAudienceLabel((string)($popupAnnouncement['audience'] ?? 'all'))) ?></b>
+              </div>
+              <div class="app-popup-actions">
+                <button type="button" class="btn btn-primary" id="announcementPopupOk">Oke, paham</button>
+              </div>
+            </div>
+          </div>
         </div>
       <?php endif; ?>
