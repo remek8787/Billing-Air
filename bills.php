@@ -196,6 +196,12 @@ require __DIR__ . '/includes/header.php';
     <button class="bg-slate-900 text-white rounded px-4 py-2">Filter</button>
   </form>
 
+  <?php if ($user['role'] !== 'customer'): ?>
+    <div class="mt-3 p-3 rounded bg-sky-100 text-sm">
+      <b>Info diskon:</b> diskon diberikan dari menu <b>Tagihan</b>. Tinggal isi nominal diskon pada form pembayaran, lalu simpan / tandai lunas.
+    </div>
+  <?php endif; ?>
+
   <div class="mt-4 stats-grid-4 text-sm">
     <div class="info-card">
       <div class="info-label">Total Tagihan Tampil</div>
@@ -305,6 +311,7 @@ require __DIR__ . '/includes/header.php';
                     </select>
                     <input type="date" name="payment_date" value="<?= e(date('Y-m-d')) ?>" class="border rounded px-2 py-2 text-xs">
                     <input type="number" min="0" max="<?= (int)$bill['amount_total'] ?>" name="discount_amount" value="0" class="border rounded px-2 py-2 text-xs" placeholder="diskon opsional">
+                    <div class="bill-inline-note">Ketik nominal diskon di sini. Contoh: 5000</div>
                     <input name="payment_note" class="border rounded px-2 py-2 text-xs" placeholder="catatan opsional">
                     <button class="px-3 py-2 rounded bg-emerald-100 text-emerald-700 text-xs font-semibold">Tandai Lunas</button>
                   </form>
@@ -323,6 +330,7 @@ require __DIR__ . '/includes/header.php';
                     </select>
                     <input type="date" name="payment_date" value="<?= e(dateInputValue((string)($bill['paid_at'] ?? ''))) ?>" class="border rounded px-2 py-2 text-xs">
                     <input type="number" min="0" max="<?= (int)$bill['amount_total'] ?>" name="discount_amount" value="<?= billDiscountAmount($bill) ?>" class="border rounded px-2 py-2 text-xs" placeholder="diskon opsional">
+                    <div class="bill-inline-note">Kalau mau ubah diskon, tinggal ganti nominalnya lalu klik update.</div>
                     <input name="payment_note" value="<?= e((string)($bill['payment_note'] ?? '')) ?>" class="border rounded px-2 py-2 text-xs" placeholder="catatan opsional">
                     <button class="px-3 py-2 rounded bg-slate-100 text-slate-700 text-xs font-semibold">Update Bayar</button>
                   </form>

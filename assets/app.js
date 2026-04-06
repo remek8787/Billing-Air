@@ -8,6 +8,41 @@
   const sidebarToggle = document.getElementById('sidebarToggle');
   const themeToggle = document.getElementById('themeToggle');
 
+  const ensureLoader = () => {
+    let loader = document.getElementById('appLoader');
+    if (loader) return loader;
+
+    loader = document.createElement('div');
+    loader.id = 'appLoader';
+    loader.className = 'app-loader hide';
+    loader.innerHTML = `
+      <div class="spinner-border text-primary" role="status"></div>
+      <div class="app-loader-message">Memuat halaman...</div>
+      <div class="app-loader-subtitle">Tunggu sebentar ya</div>
+    `;
+    document.body.appendChild(loader);
+    return loader;
+  };
+
+  const setLoaderMessage = (title = 'Memuat halaman...', subtitle = 'Tunggu sebentar ya') => {
+    const loader = ensureLoader();
+    const titleEl = loader.querySelector('.app-loader-message');
+    const subtitleEl = loader.querySelector('.app-loader-subtitle');
+    if (titleEl) titleEl.textContent = title;
+    if (subtitleEl) subtitleEl.textContent = subtitle;
+  };
+
+  const showLoader = (title, subtitle) => {
+    const loader = ensureLoader();
+    setLoaderMessage(title, subtitle);
+    loader.classList.remove('hide');
+  };
+
+  const hideLoader = () => {
+    const loader = ensureLoader();
+    loader.classList.add('hide');
+  };
+
   const setTheme = (theme) => {
     body.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
@@ -162,11 +197,38 @@
   };
 
   const initLoader = () => {
-    const loader = document.getElementById('appLoader');
-    if (!loader) return;
+    const loader = ensureLoader();
     window.addEventListener('load', () => {
-      loader.classList.add('hide');
-      setTimeout(() => loader.remove(), 300);
+      hideLoader();
+    });
+
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('a[href]');
+      if (!link) return;
+      if (link.target === '_blank' || link.hasAttribute('download')) return;
+      const href = link.getAttribute('href') || '';
+      if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+
+      try {
+        const url = new URL(href, window.location.href);
+        if (url.origin !== window.location.origin) return;
+      } catch (error) {
+        return;
+      }
+
+      const label = (link.textContent || '').trim();
+      showLoader(label ? `Membuka ${label}...` : 'Membuka halaman...', 'Menyiapkan tampilan aplikasi');
+    });
+
+    document.addEventListener('submit', (event) => {
+      const form = event.target;
+      if (!(form instanceof HTMLFormElement)) return;
+      const action = (form.getAttribute('action') || '').toLowerCase();
+      const isLogin = action.includes('index.php') || form.querySelector('input[name="username"]') && form.querySelector('input[name="password"]');
+      showLoader(
+        isLogin ? 'Memproses login...' : 'Menyimpan data...',
+        isLogin ? 'Sedang masuk ke aplikasi' : 'Perubahan sedang diproses'
+      );
     });
   };
 
