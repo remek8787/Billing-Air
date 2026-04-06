@@ -70,11 +70,6 @@ $flash = getFlash();
       <button class="w-full bg-slate-900 text-white rounded py-2 hover:bg-slate-700">Masuk</button>
     </form>
 
-    <div class="mt-5 text-xs text-slate-500 leading-5 bg-slate-50 border rounded p-3">
-      <p><b>Default akun awal:</b></p>
-      <p>Admin: <code>admin / admin123</code></p>
-      <p>Collector: <code>collector / collector123</code></p>
-    </div>
   </div>
 
 
