@@ -79,9 +79,6 @@ require __DIR__ . '/includes/header.php';
       <div>
         <div class="dashboard-hero-kicker">Dashboard Aplikasi</div>
         <h2 class="dashboard-hero-title dashboard-hero-title--compact">DENTA TIRTA</h2>
-        <p class="dashboard-hero-text dashboard-hero-text--compact">
-          Ringkas, fokus ke operasional harian, dan tombol penting tetap gampang dijangkau.
-        </p>
       </div>
     </div>
     <div class="dashboard-hero-actions dashboard-hero-actions--compact">
