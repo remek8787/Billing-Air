@@ -81,7 +81,7 @@ $receiptNo = receiptNumber($bill);
     <div class="receipt-head d-flex justify-content-between align-items-start gap-3 flex-wrap">
       <div>
         <div class="fs-3 fw-bold">Kwitansi Pembayaran Air</div>
-        <div class="opacity-75">Billing Swadaya AIR Denta</div>
+        <div class="opacity-75">DENTA TIRTA</div>
       </div>
       <div class="text-md-end">
         <div class="small opacity-75">No. Kwitansi</div>

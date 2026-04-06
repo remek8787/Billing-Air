@@ -12,7 +12,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Billing AIR Denta">
+  <meta name="apple-mobile-web-app-title" content="DENTA TIRTA">
   <title><?= e(APP_NAME) ?></title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
@@ -32,7 +32,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
 <div class="app-layout" id="appLayout">
   <aside class="app-sidebar" id="appSidebar">
     <div class="mb-4">
-      <h1 class="app-title">Billing AIR Denta</h1>
+      <h1 class="app-title">DENTA TIRTA</h1>
       <div class="app-subtitle">Abonemen Rp 30.000 + Rp 2.500 / m³</div>
     </div>
 
@@ -64,7 +64,7 @@ $currentPage = basename($_SERVER['PHP_SELF'] ?? '');
     <header class="app-topbar">
       <div class="d-flex align-items-center gap-2">
         <button class="btn btn-sm btn-outline-secondary" id="sidebarToggle" type="button" title="Hide/Show Sidebar"><i class="bi bi-layout-sidebar"></i></button>
-        <span class="small text-secondary">Swadaya AIR Denta</span>
+        <span class="small text-secondary">DENTA TIRTA</span>
       </div>
 
       <?php if ($user): ?>

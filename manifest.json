@@ -1,6 +1,6 @@
 {
-  "name": "Billing Swadaya AIR Denta",
-  "short_name": "AIR Denta",
+  "name": "DENTA TIRTA",
+  "short_name": "DENTA TIRTA",
   "description": "Aplikasi billing air untuk admin, collector, dan pelanggan.",
   "id": "./",
   "start_url": "./index.php",

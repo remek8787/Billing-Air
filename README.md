@@ -1,4 +1,4 @@
-# Billing Swadaya AIR Denta
+# DENTA TIRTA
 
 Aplikasi billing air berbasis **PHP + SQLite + Tailwind CDN** dengan role:
 

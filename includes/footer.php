@@ -1,7 +1,7 @@
     </main>
 
     <footer class="app-footer">
-      Copyright DSA ( DENTA SWADAYA AIR ) • Powered By
+      Copyright DENTA TIRTA • Powered By
       <a href="https://remek8787.github.io/portofolio/" target="_blank" rel="noopener">Ananta Satriya</a>
     </footer>
   </div>
@@ -12,11 +12,11 @@
     <div class="install-popup-head">
       <div class="install-popup-brand">
         <div class="install-popup-icon-wrap">
-          <img src="assets/app-icon.svg" alt="Billing AIR Denta" class="install-popup-icon">
+          <img src="assets/app-icon.svg" alt="DENTA TIRTA" class="install-popup-icon">
         </div>
         <div>
           <div class="install-popup-title" id="installPromptTitle">Install Aplikasi</div>
-          <div class="install-popup-subtitle">Billing AIR Denta</div>
+          <div class="install-popup-subtitle">DENTA TIRTA</div>
         </div>
       </div>
       <button type="button" class="install-popup-close" id="installPromptClose" aria-label="Tutup popup install">

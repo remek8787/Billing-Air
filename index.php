@@ -35,7 +35,7 @@ $flash = getFlash();
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Billing AIR Denta">
+  <meta name="apple-mobile-web-app-title" content="DENTA TIRTA">
   <title>Login - <?= e(APP_NAME) ?></title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
@@ -46,7 +46,7 @@ $flash = getFlash();
 </head>
 <body data-theme="light" class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
   <div class="w-full max-w-md bg-white rounded-2xl shadow p-6">
-    <h1 class="text-2xl font-bold mb-2">Billing Swadaya AIR Denta</h1>
+    <h1 class="text-2xl font-bold mb-2">DENTA TIRTA</h1>
     <p class="text-sm text-slate-600 mb-5">Login sebagai <b>admin</b>, <b>collector</b>, atau <b>pelanggan</b>.</p>
 
     <?php if ($flash): ?>
@@ -79,11 +79,11 @@ $flash = getFlash();
       <div class="install-popup-head">
         <div class="install-popup-brand">
           <div class="install-popup-icon-wrap">
-            <img src="assets/app-icon.svg" alt="Billing AIR Denta" class="install-popup-icon">
+            <img src="assets/app-icon.svg" alt="DENTA TIRTA" class="install-popup-icon">
           </div>
           <div>
             <div class="install-popup-title" id="installPromptTitle">Install Aplikasi</div>
-            <div class="install-popup-subtitle">Billing AIR Denta</div>
+            <div class="install-popup-subtitle">DENTA TIRTA</div>
           </div>
         </div>
         <button type="button" class="install-popup-close" id="installPromptClose" aria-label="Tutup popup install">
