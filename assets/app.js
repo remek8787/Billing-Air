@@ -255,6 +255,7 @@
     const installBtn = document.getElementById('installPromptInstallBtn');
     const noteBox = document.getElementById('installPromptNote');
     const stepsBox = document.getElementById('installPromptSteps');
+    const manualGuideButtons = document.querySelectorAll('[data-open-install-guide]');
 
     if (!backdrop || !installBtn || !laterBtn || !closeBtn) return;
 
@@ -267,9 +268,12 @@
       return raw > 0 && (Date.now() - raw) < (12 * 60 * 60 * 1000);
     };
 
-    const showPrompt = (mode = 'manual') => {
-      if (isStandalone() || localStorage.getItem(INSTALL_INSTALLED_KEY) === '1' || !isMobileLike()) return;
-      if (wasDismissedRecently()) return;
+    const showPrompt = (mode = 'manual', options = {}) => {
+      const force = options.force === true;
+      if (!force) {
+        if (isStandalone() || localStorage.getItem(INSTALL_INSTALLED_KEY) === '1' || !isMobileLike()) return;
+        if (wasDismissedRecently()) return;
+      }
 
       installBtn.hidden = mode !== 'auto';
       noteBox.hidden = mode === 'auto';
@@ -296,7 +300,7 @@
 
     installBtn.addEventListener('click', async () => {
       if (!deferredPrompt) {
-        showPrompt('manual');
+        showPrompt('manual', { force: true });
         return;
       }
 
@@ -319,6 +323,12 @@
     window.addEventListener('appinstalled', () => {
       localStorage.setItem(INSTALL_INSTALLED_KEY, '1');
       hidePrompt(false);
+    });
+
+    manualGuideButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        showPrompt('manual', { force: true });
+      });
     });
 
     if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {

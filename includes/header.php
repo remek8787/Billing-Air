@@ -18,7 +18,7 @@ $popupAnnouncement = latestPopupAnnouncement();
   <title><?= e(APP_NAME) ?></title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="assets/app-icon.svg">
+  <link rel="apple-touch-icon" href="assets/app-icon-192.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
@@ -81,7 +81,7 @@ $popupAnnouncement = latestPopupAnnouncement();
     </header>
 
     <main class="app-main">
-      <?php if ($activeAnnouncements): ?>
+      <?php if ($currentPage === 'dashboard.php' && $activeAnnouncements): ?>
         <?php foreach (array_slice($activeAnnouncements, 0, 1) as $notice): ?>
           <div class="announcement-banner <?= e(announcementLevelClass((string)($notice['level'] ?? 'info'))) ?> mb-4">
             <div class="announcement-banner-icon"><i class="bi bi-megaphone-fill"></i></div>
@@ -100,7 +100,7 @@ $popupAnnouncement = latestPopupAnnouncement();
         </div>
       <?php endif; ?>
 
-      <?php if ($popupAnnouncement): ?>
+      <?php if ($currentPage === 'dashboard.php' && $popupAnnouncement): ?>
         <div class="app-popup-backdrop" id="announcementPopupBackdrop" hidden>
           <div class="app-popup-card <?= e(announcementLevelClass((string)($popupAnnouncement['level'] ?? 'info'))) ?>" role="dialog" aria-modal="true" aria-labelledby="announcementPopupTitle" data-announcement-id="<?= (int)$popupAnnouncement['id'] ?>">
             <div class="app-popup-head">

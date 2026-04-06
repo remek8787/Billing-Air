@@ -18,11 +18,36 @@ Aplikasi billing air berbasis **PHP + SQLite + Tailwind CDN** dengan role:
 - Lihat daftar tagihan + status lunas/belum
 - Pelanggan bisa cek tagihan sendiri per bulan
 - Admin bisa kelola user dan ubah tarif
+- **Tanggal pemasangan pelanggan**
+- **Tanggal pembayaran** saat tandai lunas / update pembayaran
+- **Diskon pembayaran opsional** per tagihan
+- **Cetak tagihan dan kwitansi pembayaran**
+- **ID pelanggan format DSA + 4 digit** tampil lebih konsisten
+- **Dashboard tutorial + info update fitur**
+- **Pencarian tabel dan pemilih pelanggan** untuk mempercepat input
 
 ## Akun default awal
 
 - Admin: `admin` / `admin123`
 - Collector: `collector` / `collector123`
+
+## Update terbaru
+
+Beberapa improve kecil yang sudah ditambahkan untuk versi terbaru:
+
+- Dashboard sekarang menampilkan **ringkasan hasil update** dan **cara penggunaan fitur**.
+- Tutorial penggunaan dipusatkan di dashboard agar admin/collector tidak bingung alurnya.
+- Panduan instalasi PWA juga dipusatkan di dashboard.
+- Riwayat tagihan, pembayaran, diskon, dan kwitansi sudah lebih jelas untuk operasional harian.
+
+## Alur penggunaan singkat
+
+1. Tambah pelanggan dari menu **Pelanggan**.
+2. Isi **tanggal pemasangan** dan data kontak pelanggan.
+3. Input meter bulanan di menu **Input Meter**.
+4. Proses pembayaran di menu **Tagihan** dengan opsi **tanggal bayar**, **metode**, dan **diskon**.
+5. Cetak **Tagihan** atau **Kwitansi** sesuai kebutuhan.
+6. Pelanggan login untuk cek status tagihan dan riwayat pembayaran sendiri.
 
 ## Menjalankan di lokal
 

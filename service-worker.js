@@ -1,8 +1,10 @@
-const CACHE_NAME = 'billing-air-pwa-v1';
+const CACHE_NAME = 'billing-air-pwa-v2';
 const STATIC_ASSETS = [
   './assets/style.css',
   './assets/app.js',
   './assets/app-icon.svg',
+  './assets/app-icon-192.png',
+  './assets/app-icon-512.png',
   './manifest.json'
 ];
 
