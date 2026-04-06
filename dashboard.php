@@ -113,13 +113,22 @@ require __DIR__ . '/includes/header.php';
       </div>
       <span class="dashboard-update-badge">Live</span>
     </div>
-    <ul class="dashboard-bullet-list">
-      <li>Tanggal pemasangan pelanggan sudah tampil lebih jelas.</li>
-      <li>Tanggal pembayaran + diskon opsional sudah siap dipakai.</li>
-      <li>Nota tagihan dan kwitansi lunas sudah tersedia.</li>
-      <li>ID pelanggan format DSA makin konsisten di banyak halaman.</li>
-      <li>Pencarian pelanggan dan data lebih cepat.</li>
-    </ul>
+    <?php if ($user['role'] === 'customer'): ?>
+      <ul class="dashboard-bullet-list">
+        <li>ID pelanggan sekarang tampil lebih konsisten di halaman Anda.</li>
+        <li>Status pembayaran dan riwayat tagihan lebih jelas dibaca.</li>
+        <li>Kwitansi pembayaran lunas bisa dibuka langsung dari tagihan.</li>
+        <li>Tampilan dashboard dibuat lebih ringkas supaya fokus ke info tagihan.</li>
+      </ul>
+    <?php else: ?>
+      <ul class="dashboard-bullet-list">
+        <li>Tanggal pemasangan pelanggan sudah tampil lebih jelas.</li>
+        <li>Tanggal pembayaran + diskon opsional sudah siap dipakai.</li>
+        <li>Nota tagihan dan kwitansi lunas sudah tersedia.</li>
+        <li>ID pelanggan format DSA makin konsisten di banyak halaman.</li>
+        <li>Pencarian pelanggan dan data lebih cepat.</li>
+      </ul>
+    <?php endif; ?>
   </div>
 
   <div class="bg-white rounded-xl shadow p-4 dashboard-update-card dashboard-update-card--compact">
@@ -129,12 +138,21 @@ require __DIR__ . '/includes/header.php';
         <h3 class="dashboard-section-title dashboard-section-title--compact">Alur cepat</h3>
       </div>
     </div>
-    <ol class="dashboard-inline-steps">
-      <li><b>Pelanggan</b> → tambah data + tanggal pemasangan</li>
-      <li><b>Input Meter</b> → isi meter akhir bulanan</li>
-      <li><b>Tagihan</b> → proses bayar, diskon, cetak nota</li>
-      <li><b>Kwitansi</b> → muncul untuk tagihan yang sudah lunas</li>
-    </ol>
+    <?php if ($user['role'] === 'customer'): ?>
+      <ol class="dashboard-inline-steps">
+        <li><b>Tagihan Saya</b> → lihat periode, total, dan status bayar</li>
+        <li><b>Cetak Tagihan</b> → buka nota tagihan kapan saja</li>
+        <li><b>Kwitansi</b> → tersedia jika tagihan sudah lunas</li>
+        <li><b>Profil</b> → ubah password akun bila diperlukan</li>
+      </ol>
+    <?php else: ?>
+      <ol class="dashboard-inline-steps">
+        <li><b>Pelanggan</b> → tambah data + tanggal pemasangan</li>
+        <li><b>Input Meter</b> → isi meter akhir bulanan</li>
+        <li><b>Tagihan</b> → proses bayar, diskon, cetak nota</li>
+        <li><b>Kwitansi</b> → muncul untuk tagihan yang sudah lunas</li>
+      </ol>
+    <?php endif; ?>
 
     <div class="dashboard-shortcuts dashboard-shortcuts--compact">
       <?php if ($user['role'] !== 'customer'): ?>
@@ -151,10 +169,17 @@ require __DIR__ . '/includes/header.php';
         <i class="bi bi-receipt"></i>
         <span><?= $user['role'] === 'customer' ? 'Lihat Tagihan Saya' : 'Kelola Tagihan' ?></span>
       </a>
-      <button type="button" class="dashboard-shortcut-card" data-bs-toggle="modal" data-bs-target="#tutorialModal">
-        <i class="bi bi-journal-richtext"></i>
-        <span>Buka Tutorial</span>
-      </button>
+      <?php if ($user['role'] === 'customer'): ?>
+        <a href="profile.php" class="dashboard-shortcut-card">
+          <i class="bi bi-person-circle"></i>
+          <span>Profil Saya</span>
+        </a>
+      <?php else: ?>
+        <button type="button" class="dashboard-shortcut-card" data-bs-toggle="modal" data-bs-target="#tutorialModal">
+          <i class="bi bi-journal-richtext"></i>
+          <span>Buka Tutorial</span>
+        </button>
+      <?php endif; ?>
     </div>
   </div>
 </section>
@@ -253,41 +278,72 @@ require __DIR__ . '/includes/header.php';
             <div class="tutorial-step-text">Masuk sebagai <b>admin</b>, <b>collector</b>, atau <b>pelanggan</b> sesuai akun yang dipakai.</div>
           </div>
         </div>
-        <div class="tutorial-step-card">
-          <div class="tutorial-step-number">2</div>
-          <div>
-            <div class="tutorial-step-title">Kelola data pelanggan</div>
-            <div class="tutorial-step-text">Admin bisa tambah/edit pelanggan, lengkapi alamat, nomor HP, dan tanggal pemasangan. ID Pelanggan otomatis dipakai juga sebagai password pelanggan.</div>
+        <?php if ($user['role'] === 'customer'): ?>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">2</div>
+            <div>
+              <div class="tutorial-step-title">Lihat tagihan Anda</div>
+              <div class="tutorial-step-text">Masuk ke menu <b>Tagihan Saya</b> untuk melihat periode tagihan, pemakaian air, dan status pembayaran.</div>
+            </div>
           </div>
-        </div>
-        <div class="tutorial-step-card">
-          <div class="tutorial-step-number">3</div>
-          <div>
-            <div class="tutorial-step-title">Input meter bulanan</div>
-            <div class="tutorial-step-text">Masuk ke menu <b>Input Meter</b>, pilih pelanggan, isi meter awal dan akhir. Sistem akan hitung pemakaian dan tagihan otomatis.</div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">3</div>
+            <div>
+              <div class="tutorial-step-title">Cek status lunas atau belum</div>
+              <div class="tutorial-step-text">Setiap tagihan menampilkan total, tanggal bayar, dan status apakah sudah lunas atau masih belum lunas.</div>
+            </div>
           </div>
-        </div>
-        <div class="tutorial-step-card">
-          <div class="tutorial-step-number">4</div>
-          <div>
-            <div class="tutorial-step-title">Proses pembayaran</div>
-            <div class="tutorial-step-text">Dari menu <b>Tagihan</b>, tandai lunas, isi tanggal bayar, metode bayar, dan diskon opsional bila ada.</div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">4</div>
+            <div>
+              <div class="tutorial-step-title">Cetak tagihan atau kwitansi</div>
+              <div class="tutorial-step-text">Tagihan bisa dicetak kapan saja. Jika sudah lunas, tombol <b>Kwitansi</b> juga akan tersedia.</div>
+            </div>
           </div>
-        </div>
-        <div class="tutorial-step-card">
-          <div class="tutorial-step-number">5</div>
-          <div>
-            <div class="tutorial-step-title">Cetak tagihan atau kwitansi</div>
-            <div class="tutorial-step-text">Tagihan bisa dicetak kapan saja. Untuk pembayaran lunas, tombol <b>Kwitansi</b> akan muncul otomatis.</div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">5</div>
+            <div>
+              <div class="tutorial-step-title">Kelola profil Anda</div>
+              <div class="tutorial-step-text">Masuk ke menu <b>Profil</b> bila ingin mengganti password akun pelanggan Anda.</div>
+            </div>
           </div>
-        </div>
-        <div class="tutorial-step-card">
-          <div class="tutorial-step-number">6</div>
-          <div>
-            <div class="tutorial-step-title">Pelanggan tinggal cek tagihan</div>
-            <div class="tutorial-step-text">Pelanggan login untuk melihat riwayat pemakaian, status pembayaran, cetak tagihan, dan kwitansi bila sudah lunas.</div>
+        <?php else: ?>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">2</div>
+            <div>
+              <div class="tutorial-step-title">Kelola data pelanggan</div>
+              <div class="tutorial-step-text">Admin bisa tambah/edit pelanggan, lengkapi alamat, nomor HP, dan tanggal pemasangan. ID Pelanggan otomatis dipakai juga sebagai password pelanggan.</div>
+            </div>
           </div>
-        </div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">3</div>
+            <div>
+              <div class="tutorial-step-title">Input meter bulanan</div>
+              <div class="tutorial-step-text">Masuk ke menu <b>Input Meter</b>, pilih pelanggan, isi meter awal dan akhir. Sistem akan hitung pemakaian dan tagihan otomatis.</div>
+            </div>
+          </div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">4</div>
+            <div>
+              <div class="tutorial-step-title">Proses pembayaran</div>
+              <div class="tutorial-step-text">Dari menu <b>Tagihan</b>, tandai lunas, isi tanggal bayar, metode bayar, dan diskon opsional bila ada.</div>
+            </div>
+          </div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">5</div>
+            <div>
+              <div class="tutorial-step-title">Cetak tagihan atau kwitansi</div>
+              <div class="tutorial-step-text">Tagihan bisa dicetak kapan saja. Untuk pembayaran lunas, tombol <b>Kwitansi</b> akan muncul otomatis.</div>
+            </div>
+          </div>
+          <div class="tutorial-step-card">
+            <div class="tutorial-step-number">6</div>
+            <div>
+              <div class="tutorial-step-title">Pelanggan tinggal cek tagihan</div>
+              <div class="tutorial-step-text">Pelanggan login untuk melihat riwayat pemakaian, status pembayaran, cetak tagihan, dan kwitansi bila sudah lunas.</div>
+            </div>
+          </div>
+        <?php endif; ?>
       </div>
       <div class="modal-footer border-0 pt-0">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Tutup</button>
