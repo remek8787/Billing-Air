@@ -12,7 +12,16 @@ $customerCount = (int)$pdo->query('SELECT COUNT(*) FROM customers')->fetchColumn
 $unpaidCount = (int)$pdo->query("SELECT COUNT(*) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
 $unpaidTotal = (int)$pdo->query("SELECT COALESCE(SUM(amount_total),0) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
 $unpaidCustomerCount = (int)$pdo->query("SELECT COUNT(DISTINCT customer_id) FROM meter_readings WHERE status = 'unpaid'")->fetchColumn();
-$paidCustomerCount = max(0, $customerCount - $unpaidCustomerCount);
+$paidCustomerCount = (int)$pdo->query("SELECT COUNT(*) FROM customers c
+    WHERE EXISTS (
+        SELECT 1 FROM meter_readings mr_paid
+        WHERE mr_paid.customer_id = c.id AND mr_paid.status = 'paid'
+    )
+    AND NOT EXISTS (
+        SELECT 1 FROM meter_readings mr_unpaid
+        WHERE mr_unpaid.customer_id = c.id AND mr_unpaid.status = 'unpaid'
+    )")->fetchColumn();
+$noBillCustomerCount = max(0, $customerCount - $paidCustomerCount - $unpaidCustomerCount);
 
 if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
     $stmt = $pdo->prepare("SELECT
@@ -77,7 +86,12 @@ require __DIR__ . '/includes/header.php';
   <div class="stat-card p-4">
     <p class="text-sm text-slate-500">Total Piutang</p>
     <p class="text-3xl font-bold"><?= e(rupiah($unpaidTotal)) ?></p>
-    <div class="text-xs text-slate-500 mt-1">Tagihan belum lunas: <?= $unpaidCount ?></div>
+    <div class="text-xs text-slate-500 mt-1">
+      Tagihan belum lunas: <?= $unpaidCount ?>
+      <?php if ($user['role'] !== 'customer' && $noBillCustomerCount > 0): ?>
+        • Belum ada tagihan: <?= $noBillCustomerCount ?> pelanggan
+      <?php endif; ?>
+    </div>
   </div>
 </div>
 

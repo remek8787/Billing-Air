@@ -72,13 +72,24 @@
 
       let filteredRows = [...rows];
       let page = 1;
-      const pageSize = Number(table.dataset.pageSize || 10);
+      let pageSize = Number(table.dataset.pageSize || 10);
 
       const tools = document.createElement('div');
       tools.className = 'js-table-tools';
       tools.innerHTML = `
-        <input type="search" class="form-control form-control-sm js-table-search" placeholder="Cari data...">
+        <div class="js-table-search-wrap">
+          <input type="search" class="form-control form-control-sm js-table-search" placeholder="Cari data...">
+        </div>
         <div class="js-table-pager">
+          <label class="js-page-size-wrap">
+            <span>Show</span>
+            <select class="form-select form-select-sm js-page-size">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="15">15</option>
+              <option value="25">25</option>
+            </select>
+          </label>
           <button type="button" class="btn btn-sm btn-outline-secondary js-prev">Prev</button>
           <span class="js-table-info"></span>
           <button type="button" class="btn btn-sm btn-outline-secondary js-next">Next</button>
@@ -91,6 +102,11 @@
       const info = tools.querySelector('.js-table-info');
       const prevBtn = tools.querySelector('.js-prev');
       const nextBtn = tools.querySelector('.js-next');
+      const pageSizeInput = tools.querySelector('.js-page-size');
+
+      if (pageSizeInput) {
+        pageSizeInput.value = String(pageSize);
+      }
 
       const draw = () => {
         const total = filteredRows.length;
@@ -119,6 +135,12 @@
       searchInput?.addEventListener('input', () => {
         const q = (searchInput.value || '').toLowerCase().trim();
         filteredRows = rows.filter((row) => row.innerText.toLowerCase().includes(q));
+        page = 1;
+        draw();
+      });
+
+      pageSizeInput?.addEventListener('change', () => {
+        pageSize = Math.max(1, Number(pageSizeInput.value || 10));
         page = 1;
         draw();
       });
