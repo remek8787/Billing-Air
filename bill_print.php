@@ -151,19 +151,23 @@ $officePhone = '0341 - 8701147';
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
-    .ticket::before {
-      content: '';
+    .watermark {
       position: absolute;
-      inset: 10% 8%;
-      background-image: url('<?= e($logoUrl) ?>');
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: min(58%, 320px);
-      opacity: 0.08;
+      inset: 12% 10%;
+      width: 80%;
+      height: 76%;
+      margin: auto;
+      object-fit: contain;
+      opacity: 0.16;
       z-index: 0;
       pointer-events: none;
       transform: rotate(-12deg);
+      filter: grayscale(1) contrast(1.15);
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .ticket > * {
       position: relative;
@@ -333,6 +337,9 @@ $officePhone = '0341 - 8701147';
         margin: 0;
         padding: 8mm;
       }
+      .watermark {
+        opacity: 0.2;
+      }
     }
   </style>
 </head>
@@ -351,6 +358,7 @@ $officePhone = '0341 - 8701147';
   </div>
 
   <div class="ticket">
+    <img class="watermark" src="<?= e($logoUrl) ?>" alt="Watermark Logo DENTA TIRTA">
     <div class="head">
       <div class="brand-wrap">
         <div>
