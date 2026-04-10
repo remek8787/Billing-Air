@@ -385,7 +385,7 @@ $officePhone = '0341 - 8701147';
       </div>
       <div>
         <div class="access-title">Login Pelanggan</div>
-        <div class="access-line">Link QR akun: <span class="access-link"><?= e($autoLoginUrl !== '' ? $autoLoginUrl : $loginUrl) ?></span></div>
+        <div class="access-line">Akses akun: <span class="access-link"><?= e($loginUrl) ?></span></div>
         <div class="access-line">Username: <strong><?= e($customerLoginUsername !== '' ? $customerLoginUsername : '-') ?></strong></div>
         <div class="access-line">Password / ID: <strong><?= e($customerLoginPassword) ?></strong></div>
         <div class="access-help">Pengaduan layanan: <a class="access-link" href="<?= e($supportUrl) ?>" target="_blank" rel="noopener"><?= e($supportPhoneDisplay) ?> WhatsApp</a></div>
