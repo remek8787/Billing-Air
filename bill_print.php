@@ -156,16 +156,16 @@ $officePhone = '0341 - 8701147';
     }
     .watermark {
       position: absolute;
-      inset: 12% 10%;
-      width: 80%;
-      height: 76%;
-      margin: auto;
+      top: 50%;
+      left: 50%;
+      width: 30%;
+      max-width: 220px;
+      height: auto;
       object-fit: contain;
-      opacity: 0.16;
+      opacity: 0.12;
       z-index: 0;
       pointer-events: none;
-      transform: rotate(-12deg);
-      filter: grayscale(1) contrast(1.15);
+      transform: translate(-50%, -50%);
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -338,7 +338,7 @@ $officePhone = '0341 - 8701147';
         padding: 8mm;
       }
       .watermark {
-        opacity: 0.2;
+        opacity: 0.14;
       }
     }
   </style>
