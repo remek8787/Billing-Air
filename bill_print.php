@@ -43,17 +43,18 @@ if (!$bill) {
     exit;
 }
 
-$paperWidth = (float)($_GET['w'] ?? 15);
-$paperHeight = (float)($_GET['h'] ?? 7);
-$paperWidth = $paperWidth > 0 ? $paperWidth : 15;
-$paperHeight = $paperHeight > 0 ? $paperHeight : 7;
-$paperWidth = max(9, min(30, $paperWidth));
-$paperHeight = max(5, min(20, $paperHeight));
+$paperWidth = (float)($_GET['w'] ?? 11);
+$paperHeight = (float)($_GET['h'] ?? 9.5);
+$paperWidth = $paperWidth > 0 ? $paperWidth : 11;
+$paperHeight = $paperHeight > 0 ? $paperHeight : 9.5;
+$paperWidth = max(4, min(20, $paperWidth));
+$paperHeight = max(4, min(20, $paperHeight));
 if ($paperWidth < $paperHeight) {
     [$paperWidth, $paperHeight] = [$paperHeight, $paperWidth];
 }
 $paperWidthText = rtrim(rtrim(number_format($paperWidth, 2, '.', ''), '0'), '.');
 $paperHeightText = rtrim(rtrim(number_format($paperHeight, 2, '.', ''), '0'), '.');
+$paperUnitLabel = 'inch';
 
 $idPelanggan = customerLoginId((string)($bill['customer_login_id'] ?? ''), (int)$bill['customer_id']);
 $discountAmount = billDiscountAmount($bill);
@@ -85,8 +86,8 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
   <title>Cetak Tagihan <?= e($documentNo) ?></title>
   <style>
     :root {
-      --paper-width: <?= e($paperWidthText) ?>cm;
-      --paper-height: <?= e($paperHeightText) ?>cm;
+      --paper-width: <?= e($paperWidthText) ?>in;
+      --paper-height: <?= e($paperHeightText) ?>in;
     }
     * { box-sizing: border-box; }
     body {
@@ -265,7 +266,7 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
     }
     @media print {
       @page {
-        size: <?= e($paperWidthText) ?>cm <?= e($paperHeightText) ?>cm;
+        size: <?= e($paperWidthText) ?>in <?= e($paperHeightText) ?>in;
         margin: 0;
       }
       body {
@@ -293,8 +294,8 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
     </div>
     <form method="get" class="toolbar-form">
       <input type="hidden" name="id" value="<?= (int)$bill['id'] ?>">
-      <label>Lebar <input type="number" step="0.5" min="9" max="30" name="w" value="<?= e($paperWidthText) ?>"></label>
-      <label>Tinggi <input type="number" step="0.5" min="5" max="20" name="h" value="<?= e($paperHeightText) ?>"></label>
+      <label>Lebar (<?= e($paperUnitLabel) ?>) <input type="number" step="0.5" min="4" max="20" name="w" value="<?= e($paperWidthText) ?>"></label>
+      <label>Tinggi (<?= e($paperUnitLabel) ?>) <input type="number" step="0.5" min="4" max="20" name="h" value="<?= e($paperHeightText) ?>"></label>
       <button type="submit" class="btn btn-light">Ubah Ukuran</button>
     </form>
   </div>
