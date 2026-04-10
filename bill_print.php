@@ -16,7 +16,7 @@ if ($id <= 0) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address, c.phone AS customer_phone,
-        c.installation_date, u.username AS customer_username, cls.password_plain AS customer_login_id
+        c.installation_date, u.id AS customer_user_id, u.username AS customer_username, cls.password_plain AS customer_login_id
     FROM meter_readings mr
     JOIN customers c ON c.id = mr.customer_id
     LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
@@ -73,10 +73,12 @@ if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '\\') {
 }
 $baseUrl = $host !== '' ? $scheme . '://' . $host . $scriptDir : '';
 $loginUrl = $baseUrl !== '' ? $baseUrl . '/index.php' : 'index.php';
+$autoLoginToken = !empty($bill['customer_user_id']) ? customerAutoLoginToken((int)$bill['customer_user_id']) : '';
+$autoLoginUrl = ($baseUrl !== '' ? $baseUrl . '/auto_login.php' : 'auto_login.php') . ($autoLoginToken !== '' ? '?token=' . rawurlencode($autoLoginToken) : '');
 $supportPhoneDisplay = '0815 - 5999 - 7222';
 $supportPhoneLink = '6281559997222';
 $supportUrl = 'https://wa.me/' . $supportPhoneLink;
-$loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($loginUrl);
+$loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($autoLoginUrl !== '' ? $autoLoginUrl : $loginUrl);
 $logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-logo.svg';
 $officeAddress = 'Jl Tanjungsari RT 005 RW 002 (Klinik Praktek Mandiri drg Puji L Gunawan), Sumbermanjingkulon, Kecamatan Pagak, Kabupaten Malang, Kode Pos 65168';
 $officePhone = '0341 - 8701147';
@@ -383,11 +385,11 @@ $officePhone = '0341 - 8701147';
       </div>
       <div>
         <div class="access-title">Login Pelanggan</div>
-        <div class="access-line">Link: <span class="access-link"><?= e($loginUrl) ?></span></div>
+        <div class="access-line">Link QR akun: <span class="access-link"><?= e($autoLoginUrl !== '' ? $autoLoginUrl : $loginUrl) ?></span></div>
         <div class="access-line">Username: <strong><?= e($customerLoginUsername !== '' ? $customerLoginUsername : '-') ?></strong></div>
         <div class="access-line">Password / ID: <strong><?= e($customerLoginPassword) ?></strong></div>
         <div class="access-help">Pengaduan layanan: <a class="access-link" href="<?= e($supportUrl) ?>" target="_blank" rel="noopener"><?= e($supportPhoneDisplay) ?> WhatsApp</a></div>
-        <div class="access-note">Scan barcode untuk buka halaman login pelanggan.</div>
+        <div class="access-note">Scan barcode untuk langsung masuk akun pelanggan masing-masing. Harap Bayar sebelum Tanggal 20 Tiap Bulannya.</div>
       </div>
     </div>
 

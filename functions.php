@@ -43,6 +43,67 @@ function saveCustomerLoginSecret(int $userId, string $passwordPlain): void
     ]);
 }
 
+function sessionLoginUser(array $user): void
+{
+    $_SESSION['user'] = [
+        'id' => (int) $user['id'],
+        'username' => $user['username'],
+        'role' => $user['role'],
+        'full_name' => $user['full_name'],
+        'customer_id' => $user['customer_id'] ? (int) $user['customer_id'] : null,
+    ];
+}
+
+function customerAutoLoginToken(int $userId): string
+{
+    $stmt = db()->prepare('SELECT auto_login_token FROM customer_login_secrets WHERE user_id = :user_id LIMIT 1');
+    $stmt->execute([':user_id' => $userId]);
+    $token = trim((string)($stmt->fetchColumn() ?: ''));
+    if ($token !== '') {
+        return $token;
+    }
+
+    $token = bin2hex(random_bytes(24));
+    $saveStmt = db()->prepare('INSERT INTO customer_login_secrets(user_id, password_plain, auto_login_token, updated_at)
+        VALUES(:user_id, :password_plain, :auto_login_token, :updated_at)
+        ON CONFLICT(user_id) DO UPDATE SET
+            auto_login_token = excluded.auto_login_token,
+            updated_at = excluded.updated_at');
+    $saveStmt->execute([
+        ':user_id' => $userId,
+        ':password_plain' => '',
+        ':auto_login_token' => $token,
+        ':updated_at' => date('Y-m-d H:i:s'),
+    ]);
+
+    return $token;
+}
+
+function loginByCustomerToken(string $token): bool
+{
+    $token = trim($token);
+    if ($token === '') {
+        return false;
+    }
+
+    $stmt = db()->prepare('SELECT u.*
+        FROM users u
+        INNER JOIN customer_login_secrets cls ON cls.user_id = u.id
+        WHERE u.role = :role AND cls.auto_login_token = :token
+        LIMIT 1');
+    $stmt->execute([
+        ':role' => 'customer',
+        ':token' => $token,
+    ]);
+    $user = $stmt->fetch();
+    if (!$user) {
+        return false;
+    }
+
+    sessionLoginUser($user);
+    return true;
+}
+
 function defaultCustomerPasswordById(int $customerId): string
 {
     $customerNo = $customerId;
@@ -108,13 +169,7 @@ function login(string $username, string $password): bool
         return false;
     }
 
-    $_SESSION['user'] = [
-        'id' => (int) $user['id'],
-        'username' => $user['username'],
-        'role' => $user['role'],
-        'full_name' => $user['full_name'],
-        'customer_id' => $user['customer_id'] ? (int) $user['customer_id'] : null,
-    ];
+    sessionLoginUser($user);
 
     return true;
 }

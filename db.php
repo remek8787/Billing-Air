@@ -108,6 +108,7 @@ function initializeDatabase(PDO $pdo): void
     ensureTableColumn($pdo, 'meter_readings', 'discount_amount', 'INTEGER NOT NULL DEFAULT 0');
     ensureTableColumn($pdo, 'customers', 'customer_no', 'INTEGER');
     ensureTableColumn($pdo, 'customers', 'installation_date', 'TEXT');
+    ensureTableColumn($pdo, 'customer_login_secrets', 'auto_login_token', 'TEXT');
 
     normalizeCustomerNumbers($pdo);
     syncCustomerDsaPasswordsByNumber($pdo);
