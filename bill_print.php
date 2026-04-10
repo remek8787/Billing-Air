@@ -139,8 +139,6 @@ $officePhone = '0341 - 8701147';
     .btn-dark { background: #0f172a; color: #fff; }
     .btn-light { background: #e2e8f0; color: #0f172a; }
     .ticket {
-      position: relative;
-      isolation: isolate;
       width: var(--paper-width);
       min-height: var(--paper-height);
       margin: 0 auto;
@@ -154,25 +152,6 @@ $officePhone = '0341 - 8701147';
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
-    .watermark {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 30%;
-      max-width: 220px;
-      height: auto;
-      object-fit: contain;
-      opacity: 0.12;
-      z-index: 0;
-      pointer-events: none;
-      transform: translate(-50%, -50%);
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
-    .ticket > * {
-      position: relative;
-      z-index: 1;
-    }
     .head {
       position: relative;
       border-bottom: 1px dashed #475569;
@@ -184,7 +163,14 @@ $officePhone = '0341 - 8701147';
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 6px;
+      gap: 8px;
+    }
+    .brand-logo {
+      width: 120px;
+      max-width: 28%;
+      height: auto;
+      object-fit: contain;
+      display: block;
     }
     .brand {
       font-size: 28px;
@@ -337,9 +323,6 @@ $officePhone = '0341 - 8701147';
         margin: 0;
         padding: 8mm;
       }
-      .watermark {
-        opacity: 0.14;
-      }
     }
   </style>
 </head>
@@ -358,9 +341,9 @@ $officePhone = '0341 - 8701147';
   </div>
 
   <div class="ticket">
-    <img class="watermark" src="<?= e($logoUrl) ?>" alt="Watermark Logo DENTA TIRTA">
     <div class="head">
       <div class="brand-wrap">
+        <img class="brand-logo" src="<?= e($logoUrl) ?>" alt="Logo DENTA TIRTA">
         <div>
           <div class="brand">Tagihan Air</div>
           <div class="brand-sub">DENTA TIRTA • <?= e($periodLabel) ?></div>
