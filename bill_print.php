@@ -77,6 +77,9 @@ $supportPhoneDisplay = '0815 - 5999 - 7222';
 $supportPhoneLink = '6281559997222';
 $supportUrl = 'https://wa.me/' . $supportPhoneLink;
 $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($loginUrl);
+$logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-logo.svg';
+$officeAddress = 'Jl Tanjungsari RT 005 RW 002 (Klinik Praktek Mandiri drg Puji L Gunawan), Sumbermanjingkulon, Kecamatan Pagak, Kabupaten Malang, Kode Pos 65168';
+$officePhone = '0341 - 8701147';
 ?>
 <!doctype html>
 <html lang="id">
@@ -147,12 +150,23 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
       gap: 10px;
     }
     .head {
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
-      align-items: flex-start;
+      position: relative;
       border-bottom: 1px dashed #475569;
-      padding-bottom: 8px;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+    .brand-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .brand-logo {
+      width: 74px;
+      height: 74px;
+      object-fit: contain;
+      display: block;
     }
     .brand {
       font-size: 28px;
@@ -163,9 +177,12 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
     .brand-sub {
       font-size: 13px;
       color: #475569;
-      margin-top: 4px;
+      margin-top: 2px;
     }
     .status {
+      position: absolute;
+      top: 0;
+      right: 0;
       border: 1px solid #111827;
       border-radius: 999px;
       padding: 6px 12px;
@@ -175,6 +192,23 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
     }
     .status.paid { background: #dcfce7; }
     .status.unpaid { background: #fef3c7; }
+    .office-box {
+      text-align: center;
+      border-bottom: 1px dashed #475569;
+      padding-bottom: 10px;
+    }
+    .office-title {
+      font-size: 13px;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+    .office-text,
+    .office-phone {
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0;
+    }
     .grid {
       display: grid;
       grid-template-columns: 1.1fr .9fr;
@@ -304,11 +338,20 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
 
   <div class="ticket">
     <div class="head">
-      <div>
-        <div class="brand">Tagihan Air</div>
-        <div class="brand-sub">DENTA TIRTA • <?= e($periodLabel) ?></div>
+      <div class="brand-wrap">
+        <img class="brand-logo" src="<?= e($logoUrl) ?>" alt="Logo DENTA TIRTA">
+        <div>
+          <div class="brand">Tagihan Air</div>
+          <div class="brand-sub">DENTA TIRTA • <?= e($periodLabel) ?></div>
+        </div>
       </div>
       <div class="status <?= $isPaid ? 'paid' : 'unpaid' ?>"><?= $isPaid ? 'LUNAS' : 'BELUM LUNAS' ?></div>
+    </div>
+
+    <div class="office-box">
+      <div class="office-title">Kantor Pembayaran</div>
+      <p class="office-text"><?= e($officeAddress) ?></p>
+      <p class="office-phone">No Telepon: <strong><?= e($officePhone) ?></strong></p>
     </div>
 
     <div class="grid">
