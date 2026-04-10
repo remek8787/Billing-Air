@@ -73,8 +73,8 @@ if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '\\') {
 }
 $baseUrl = $host !== '' ? $scheme . '://' . $host . $scriptDir : '';
 $loginUrl = $baseUrl !== '' ? $baseUrl . '/index.php' : 'index.php';
-$supportPhoneDisplay = '0812-2299-9727';
-$supportPhoneLink = '6281222999727';
+$supportPhoneDisplay = '0815 - 5999 - 7222';
+$supportPhoneLink = '6281559997222';
 $supportUrl = 'https://wa.me/' . $supportPhoneLink;
 $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($loginUrl);
 ?>
@@ -141,44 +141,44 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
       margin: 0 auto;
       background: #ffffff;
       border: 1px solid #111827;
-      padding: 8mm 7mm;
+      padding: 10mm 9mm;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 10px;
     }
     .head {
       display: flex;
       justify-content: space-between;
-      gap: 10px;
+      gap: 14px;
       align-items: flex-start;
       border-bottom: 1px dashed #475569;
-      padding-bottom: 5px;
+      padding-bottom: 8px;
     }
     .brand {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.1;
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1.05;
       text-transform: uppercase;
     }
     .brand-sub {
-      font-size: 10px;
+      font-size: 13px;
       color: #475569;
-      margin-top: 2px;
+      margin-top: 4px;
     }
     .status {
       border: 1px solid #111827;
       border-radius: 999px;
-      padding: 4px 8px;
-      font-size: 10px;
-      font-weight: 700;
+      padding: 6px 12px;
+      font-size: 12px;
+      font-weight: 800;
       white-space: nowrap;
     }
     .status.paid { background: #dcfce7; }
     .status.unpaid { background: #fef3c7; }
     .grid {
       display: grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 10px;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 18px;
     }
     .meta-table, .amount-table {
       width: 100%;
@@ -186,54 +186,56 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
     }
     .meta-table td,
     .amount-table td {
-      padding: 2px 0;
+      padding: 4px 0;
       vertical-align: top;
-      font-size: 11px;
+      font-size: 14px;
     }
     .meta-table td:first-child,
     .amount-table td:first-child {
-      width: 92px;
+      width: 120px;
       color: #475569;
+      font-weight: 600;
     }
     .amount-table td:last-child {
       text-align: right;
       white-space: nowrap;
-      padding-left: 12px;
+      padding-left: 16px;
+      font-weight: 600;
     }
     .amount-table tr.total td {
       border-top: 1px dashed #475569;
-      padding-top: 5px;
-      font-size: 13px;
-      font-weight: 700;
+      padding-top: 8px;
+      font-size: 18px;
+      font-weight: 800;
     }
     .amount-table tr.discount td:last-child {
       color: #b91c1c;
     }
     .access-box {
       display: grid;
-      grid-template-columns: 54px 1fr;
-      gap: 8px;
+      grid-template-columns: 88px 1fr;
+      gap: 12px;
       align-items: center;
       border-top: 1px dashed #475569;
       border-bottom: 1px dashed #475569;
-      padding: 6px 0;
+      padding: 10px 0;
     }
     .access-qr img {
-      width: 54px;
-      height: 54px;
+      width: 88px;
+      height: 88px;
       display: block;
       border: 1px solid #cbd5e1;
     }
     .access-title {
-      font-size: 10px;
-      font-weight: 700;
+      font-size: 13px;
+      font-weight: 800;
       text-transform: uppercase;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     .access-line,
     .access-help {
-      font-size: 10px;
-      line-height: 1.3;
+      font-size: 12px;
+      line-height: 1.45;
     }
     .access-link {
       color: #1d4ed8;
@@ -241,27 +243,27 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
       word-break: break-all;
     }
     .access-note {
-      font-size: 9px;
+      font-size: 11px;
       color: #64748b;
-      line-height: 1.25;
-      margin-top: 2px;
+      line-height: 1.35;
+      margin-top: 4px;
     }
     .foot {
       margin-top: auto;
-      padding-top: 5px;
+      padding-top: 6px;
       display: flex;
       justify-content: space-between;
-      gap: 10px;
+      gap: 14px;
       align-items: end;
     }
     .foot-note {
-      font-size: 10px;
+      font-size: 12px;
       color: #475569;
-      line-height: 1.35;
+      line-height: 1.45;
     }
     .doc-no {
       text-align: right;
-      font-size: 10px;
+      font-size: 11px;
       color: #475569;
     }
     @media print {
@@ -281,7 +283,7 @@ $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' .
         width: 100%;
         min-height: 100%;
         margin: 0;
-        padding: 6mm;
+        padding: 8mm;
       }
     }
   </style>
