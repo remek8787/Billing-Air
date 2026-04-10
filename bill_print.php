@@ -62,6 +62,20 @@ $usageCharge = ((int)$bill['usage_m3']) * ((int)$bill['price_per_m3']);
 $documentNo = sprintf('INV/%04d%02d/%04d/%04d', (int)$bill['period_year'], (int)$bill['period_month'], (int)$bill['customer_id'], (int)$bill['id']);
 $isPaid = (($bill['status'] ?? '') === 'paid');
 $periodLabel = periodLabel((int)$bill['period_month'], (int)$bill['period_year']);
+$customerLoginUsername = trim((string)($bill['customer_username'] ?? ''));
+$customerLoginPassword = $idPelanggan;
+$scheme = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
+$host = trim((string)($_SERVER['HTTP_HOST'] ?? ''));
+$scriptDir = str_replace('\\', '/', dirname((string)($_SERVER['SCRIPT_NAME'] ?? '')));
+if ($scriptDir === '/' || $scriptDir === '.' || $scriptDir === '\\') {
+    $scriptDir = '';
+}
+$baseUrl = $host !== '' ? $scheme . '://' . $host . $scriptDir : '';
+$loginUrl = $baseUrl !== '' ? $baseUrl . '/index.php' : 'index.php';
+$supportPhoneDisplay = '0812-2299-9727';
+$supportPhoneLink = '6281222999727';
+$supportUrl = 'https://wa.me/' . $supportPhoneLink;
+$loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($loginUrl);
 ?>
 <!doctype html>
 <html lang="id">
@@ -194,9 +208,45 @@ $periodLabel = periodLabel((int)$bill['period_month'], (int)$bill['period_year']
     .amount-table tr.discount td:last-child {
       color: #b91c1c;
     }
+    .access-box {
+      display: grid;
+      grid-template-columns: 54px 1fr;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px dashed #475569;
+      border-bottom: 1px dashed #475569;
+      padding: 6px 0;
+    }
+    .access-qr img {
+      width: 54px;
+      height: 54px;
+      display: block;
+      border: 1px solid #cbd5e1;
+    }
+    .access-title {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+    .access-line,
+    .access-help {
+      font-size: 10px;
+      line-height: 1.3;
+    }
+    .access-link {
+      color: #1d4ed8;
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .access-note {
+      font-size: 9px;
+      color: #64748b;
+      line-height: 1.25;
+      margin-top: 2px;
+    }
     .foot {
       margin-top: auto;
-      border-top: 1px dashed #475569;
       padding-top: 5px;
       display: flex;
       justify-content: space-between;
@@ -275,6 +325,20 @@ $periodLabel = periodLabel((int)$bill['period_month'], (int)$bill['period_year']
         <tr class="discount"><td>Diskon</td><td>- <?= e(rupiah($discountAmount)) ?></td></tr>
         <tr class="total"><td><?= $isPaid ? 'Total Bayar' : 'Total Tagihan' ?></td><td><?= e(rupiah($finalAmount)) ?></td></tr>
       </table>
+    </div>
+
+    <div class="access-box">
+      <div class="access-qr">
+        <img src="<?= e($loginQrUrl) ?>" alt="QR Login Pelanggan">
+      </div>
+      <div>
+        <div class="access-title">Login Pelanggan</div>
+        <div class="access-line">Link: <span class="access-link"><?= e($loginUrl) ?></span></div>
+        <div class="access-line">Username: <strong><?= e($customerLoginUsername !== '' ? $customerLoginUsername : '-') ?></strong></div>
+        <div class="access-line">Password / ID: <strong><?= e($customerLoginPassword) ?></strong></div>
+        <div class="access-help">Pengaduan layanan: <a class="access-link" href="<?= e($supportUrl) ?>" target="_blank" rel="noopener"><?= e($supportPhoneDisplay) ?> WhatsApp</a></div>
+        <div class="access-note">Scan barcode untuk buka halaman login pelanggan.</div>
+      </div>
     </div>
 
     <div class="foot">
