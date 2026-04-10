@@ -139,6 +139,8 @@ $officePhone = '0341 - 8701147';
     .btn-dark { background: #0f172a; color: #fff; }
     .btn-light { background: #e2e8f0; color: #0f172a; }
     .ticket {
+      position: relative;
+      isolation: isolate;
       width: var(--paper-width);
       min-height: var(--paper-height);
       margin: 0 auto;
@@ -148,6 +150,24 @@ $officePhone = '0341 - 8701147';
       display: flex;
       flex-direction: column;
       gap: 10px;
+      overflow: hidden;
+    }
+    .ticket::before {
+      content: '';
+      position: absolute;
+      inset: 10% 8%;
+      background-image: url('<?= e($logoUrl) ?>');
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: min(58%, 320px);
+      opacity: 0.08;
+      z-index: 0;
+      pointer-events: none;
+      transform: rotate(-12deg);
+    }
+    .ticket > * {
+      position: relative;
+      z-index: 1;
     }
     .head {
       position: relative;
@@ -161,12 +181,6 @@ $officePhone = '0341 - 8701147';
       align-items: center;
       justify-content: center;
       gap: 6px;
-    }
-    .brand-logo {
-      width: 74px;
-      height: 74px;
-      object-fit: contain;
-      display: block;
     }
     .brand {
       font-size: 28px;
@@ -339,7 +353,6 @@ $officePhone = '0341 - 8701147';
   <div class="ticket">
     <div class="head">
       <div class="brand-wrap">
-        <img class="brand-logo" src="<?= e($logoUrl) ?>" alt="Logo DENTA TIRTA">
         <div>
           <div class="brand">Tagihan Air</div>
           <div class="brand-sub">DENTA TIRTA • <?= e($periodLabel) ?></div>
