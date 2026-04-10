@@ -306,8 +306,7 @@ $officePhone = '0341 - 8701147';
     }
     @media print {
       @page {
-        size: <?= e($paperWidthText) ?>in <?= e($paperHeightText) ?>in;
-        margin: 0;
+        margin: 8mm;
       }
       body {
         background: #fff;
@@ -318,10 +317,10 @@ $officePhone = '0341 - 8701147';
       }
       .ticket {
         border: 0;
-        width: 100%;
-        min-height: 100%;
+        width: auto;
+        min-height: auto;
         margin: 0;
-        padding: 8mm;
+        padding: 0;
       }
     }
   </style>
@@ -338,6 +337,7 @@ $officePhone = '0341 - 8701147';
       <label>Tinggi (<?= e($paperUnitLabel) ?>) <input type="number" step="0.5" min="4" max="20" name="h" value="<?= e($paperHeightText) ?>"></label>
       <button type="submit" class="btn btn-light">Ubah Ukuran</button>
     </form>
+    <div class="small text-slate-500">Orientasi kertas sekarang tidak dikunci. Ubah portrait atau landscape langsung dari dialog printer.</div>
   </div>
 
   <div class="ticket">
