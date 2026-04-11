@@ -91,6 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $village = trim((string)($_POST['village'] ?? ''));
         $rw = trim((string)($_POST['rw'] ?? ''));
         $district = trim((string)($_POST['district'] ?? ''));
+        $regency = trim((string)($_POST['regency'] ?? ''));
 
         if (!in_array($serviceType, ['', 'swadaya', 'distribusi'], true)) {
             $serviceType = '';
@@ -105,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($id > 0) {
             $stmt = $pdo->prepare('UPDATE customers SET name = :name, address = :address, phone = :phone,
                 installation_date = :installation_date, service_type = :service_type,
-                village = :village, rw = :rw, district = :district WHERE id = :id');
+                village = :village, rw = :rw, district = :district, regency = :regency WHERE id = :id');
             $stmt->execute([
                 ':name' => $name,
                 ':address' => $address,
@@ -115,12 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':village' => $village,
                 ':rw' => $rw,
                 ':district' => $district,
+                ':regency' => $regency,
                 ':id' => $id,
             ]);
             flash('success', 'Data pelanggan diperbarui.');
         } else {
-            $stmt = $pdo->prepare('INSERT INTO customers(name, address, phone, installation_date, service_type, village, rw, district)
-                VALUES(:name, :address, :phone, :installation_date, :service_type, :village, :rw, :district)');
+            $stmt = $pdo->prepare('INSERT INTO customers(name, address, phone, installation_date, service_type, village, rw, district, regency)
+                VALUES(:name, :address, :phone, :installation_date, :service_type, :village, :rw, :district, :regency)');
             $stmt->execute([
                 ':name' => $name,
                 ':address' => $address,
@@ -130,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':village' => $village,
                 ':rw' => $rw,
                 ':district' => $district,
+                ':regency' => $regency,
             ]);
 
             $newCustomerId = (int)$pdo->lastInsertId();
@@ -289,6 +292,10 @@ require __DIR__ . '/includes/header.php';
       <div>
         <label class="text-sm">Kecamatan</label>
         <input name="district" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['district'] ?? '') ?>" placeholder="contoh: Pagak">
+      </div>
+      <div>
+        <label class="text-sm">Kabupaten</label>
+        <input name="regency" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['regency'] ?? '') ?>" placeholder="contoh: Malang">
       </div>
       <div>
         <label class="text-sm">Tanggal Pemasangan</label>

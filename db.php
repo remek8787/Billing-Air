@@ -112,6 +112,7 @@ function initializeDatabase(PDO $pdo): void
     ensureTableColumn($pdo, 'customers', 'village', 'TEXT');
     ensureTableColumn($pdo, 'customers', 'rw', 'TEXT');
     ensureTableColumn($pdo, 'customers', 'district', 'TEXT');
+    ensureTableColumn($pdo, 'customers', 'regency', 'TEXT');
     ensureTableColumn($pdo, 'customer_login_secrets', 'auto_login_token', 'TEXT');
 
     normalizeCustomerNumbers($pdo);

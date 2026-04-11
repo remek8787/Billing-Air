@@ -16,7 +16,7 @@ if ($id <= 0) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address, c.phone AS customer_phone,
-        c.installation_date, c.service_type, c.village, c.rw, c.district,
+        c.installation_date, c.service_type, c.village, c.rw, c.district, c.regency,
         u.username AS customer_username, cls.password_plain AS customer_login_id
     FROM meter_readings mr
     JOIN customers c ON c.id = mr.customer_id

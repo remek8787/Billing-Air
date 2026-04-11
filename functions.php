@@ -271,10 +271,29 @@ function customerServiceTypeLabel(?string $value): string
 
 function customerRegionLabel(array $customer, string $fallback = '-'): string
 {
-    $serviceType = customerServiceTypeLabel($customer['service_type'] ?? '');
+    $defaults = defined('DEFAULT_CUSTOMER_REGION') && is_array(DEFAULT_CUSTOMER_REGION)
+        ? DEFAULT_CUSTOMER_REGION
+        : [];
+
+    $rawServiceType = trim((string)($customer['service_type'] ?? ''));
+    $serviceType = customerServiceTypeLabel($rawServiceType !== '' ? $rawServiceType : ($defaults['service_type'] ?? ''));
     $village = trim((string)($customer['village'] ?? ''));
     $rw = trim((string)($customer['rw'] ?? ''));
     $district = trim((string)($customer['district'] ?? ''));
+    $regency = trim((string)($customer['regency'] ?? ''));
+
+    if ($village === '') {
+        $village = trim((string)($defaults['village'] ?? ''));
+    }
+    if ($rw === '') {
+        $rw = trim((string)($defaults['rw'] ?? ''));
+    }
+    if ($district === '') {
+        $district = trim((string)($defaults['district'] ?? ''));
+    }
+    if ($regency === '') {
+        $regency = trim((string)($defaults['regency'] ?? ''));
+    }
 
     $locationParts = [];
     if ($village !== '') {
@@ -285,6 +304,9 @@ function customerRegionLabel(array $customer, string $fallback = '-'): string
     }
     if ($district !== '') {
         $locationParts[] = 'Kecamatan ' . $district;
+    }
+    if ($regency !== '') {
+        $locationParts[] = 'Kabupaten ' . $regency;
     }
 
     $location = '';

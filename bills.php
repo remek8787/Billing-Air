@@ -115,7 +115,7 @@ if ($filterMonth >= 1 && $filterMonth <= 12) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
-        c.installation_date,
+        c.installation_date, c.service_type, c.village, c.rw, c.district, c.regency,
         u.username AS customer_username,
         cls.password_plain AS customer_login_id
     FROM meter_readings mr
@@ -267,6 +267,7 @@ require __DIR__ . '/includes/header.php';
           <td class="py-2 pr-3" data-label="Lokasi">
             <div class="bill-meta">
               <div class="address-cell" title="<?= e((string)($bill['customer_address'] ?? '-')) ?>"><?= e((string)($bill['customer_address'] ?? '-')) ?></div>
+              <div class="bill-subline"><b>Wilayah:</b> <?= e(customerRegionLabel($bill)) ?></div>
               <div class="bill-subline">Tgl pasang: <?= e(formatDateId((string)($bill['installation_date'] ?? ''), '-')) ?></div>
             </div>
           </td>

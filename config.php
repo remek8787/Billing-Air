@@ -15,6 +15,13 @@ const HIDDEN_STAFF_ACCOUNTS = [
         'full_name' => 'Superadmin Ananta',
     ],
 ];
+const DEFAULT_CUSTOMER_REGION = [
+    'service_type' => 'swadaya',
+    'village' => 'Sumbermanjing Kulon',
+    'rw' => '09',
+    'district' => 'Pagak',
+    'regency' => 'Malang',
+];
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
