@@ -80,8 +80,6 @@ $supportPhoneLink = '6281559997222';
 $supportUrl = 'https://wa.me/' . $supportPhoneLink;
 $loginQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' . rawurlencode($autoLoginUrl !== '' ? $autoLoginUrl : $loginUrl);
 $logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-logo.svg';
-$officeAddress = 'Jl Tanjungsari RT 005 RW 002 (Klinik Praktek Mandiri drg Puji L Gunawan), Sumbermanjingkulon, Kecamatan Pagak, Kabupaten Malang, Kode Pos 65168';
-$officePhone = '0341 - 8701147';
 ?>
 <!doctype html>
 <html lang="id">
@@ -198,23 +196,6 @@ $officePhone = '0341 - 8701147';
     }
     .status.paid { background: #dcfce7; }
     .status.unpaid { background: #fef3c7; }
-    .office-box {
-      text-align: center;
-      border-bottom: 1px dashed #475569;
-      padding-bottom: 10px;
-    }
-    .office-title {
-      font-size: 13px;
-      font-weight: 800;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-    .office-text,
-    .office-phone {
-      font-size: 12px;
-      line-height: 1.45;
-      margin: 0;
-    }
     .grid {
       display: grid;
       grid-template-columns: 1.1fr .9fr;
@@ -291,9 +272,9 @@ $officePhone = '0341 - 8701147';
     .foot {
       margin-top: auto;
       padding-top: 6px;
-      display: flex;
-      justify-content: space-between;
-      gap: 14px;
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      gap: 18px;
       align-items: end;
     }
     .foot-note {
@@ -302,7 +283,21 @@ $officePhone = '0341 - 8701147';
       line-height: 1.45;
     }
     .doc-no {
-      text-align: right;
+      margin-top: 8px;
+      font-size: 11px;
+      color: #475569;
+    }
+    .signature-box {
+      text-align: center;
+    }
+    .signature-title {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 44px;
+    }
+    .signature-line {
+      border-top: 1px solid #111827;
+      padding-top: 6px;
       font-size: 11px;
       color: #475569;
     }
@@ -354,12 +349,6 @@ $officePhone = '0341 - 8701147';
       <div class="status <?= $isPaid ? 'paid' : 'unpaid' ?>"><?= $isPaid ? 'LUNAS' : 'BELUM LUNAS' ?></div>
     </div>
 
-    <div class="office-box">
-      <div class="office-title">Kantor Pembayaran</div>
-      <p class="office-text"><?= e($officeAddress) ?></p>
-      <p class="office-phone">No Telepon: <strong><?= e($officePhone) ?></strong></p>
-    </div>
-
     <div class="grid">
       <table class="meta-table">
         <tr><td>ID</td><td>: <?= e($idPelanggan) ?></td></tr>
@@ -398,10 +387,14 @@ $officePhone = '0341 - 8701147';
         <?= $isPaid ? 'Tagihan ini sudah dibayar.' : 'Harap dibayar sebelum jatuh tempo.' ?><br>
         <?= !empty($bill['payment_method']) ? 'Metode: ' . e(strtoupper((string)$bill['payment_method'])) . ' • ' : '' ?>
         Tgl bayar: <?= e(formatDateId((string)($bill['paid_at'] ?? ''), '-')) ?>
+        <div class="doc-no">
+          <?= e($documentNo) ?><br>
+          Cetak: <?= e(date('d-m-Y H:i')) ?>
+        </div>
       </div>
-      <div class="doc-no">
-        <?= e($documentNo) ?><br>
-        Cetak: <?= e(date('d-m-Y H:i')) ?>
+      <div class="signature-box">
+        <div class="signature-title">TTD Petugas Penarikan</div>
+        <div class="signature-line">(................................)</div>
       </div>
     </div>
   </div>
