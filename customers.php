@@ -88,6 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'save_region') {
+        $id = (int)($_POST['region_id'] ?? 0);
         $serviceType = trim((string)($_POST['service_type'] ?? ''));
         $village = trim((string)($_POST['village'] ?? ''));
         $rw = trim((string)($_POST['rw'] ?? ''));
@@ -104,17 +105,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirectCustomers('#master-wilayah');
         }
 
-        $stmt = $pdo->prepare('INSERT INTO service_regions(service_type, village, rw, district, regency)
-            VALUES(:service_type, :village, :rw, :district, :regency)');
-        $stmt->execute([
-            ':service_type' => $serviceType,
-            ':village' => $village,
-            ':rw' => $rw,
-            ':district' => $district,
-            ':regency' => $regency,
-        ]);
+        if ($id > 0) {
+            $stmt = $pdo->prepare('UPDATE service_regions
+                SET service_type = :service_type,
+                    village = :village,
+                    rw = :rw,
+                    district = :district,
+                    regency = :regency
+                WHERE id = :id');
+            $stmt->execute([
+                ':id' => $id,
+                ':service_type' => $serviceType,
+                ':village' => $village,
+                ':rw' => $rw,
+                ':district' => $district,
+                ':regency' => $regency,
+            ]);
+            flash('success', 'Master wilayah berhasil diperbarui.');
+        } else {
+            $stmt = $pdo->prepare('INSERT INTO service_regions(service_type, village, rw, district, regency)
+                VALUES(:service_type, :village, :rw, :district, :regency)');
+            $stmt->execute([
+                ':service_type' => $serviceType,
+                ':village' => $village,
+                ':rw' => $rw,
+                ':district' => $district,
+                ':regency' => $regency,
+            ]);
+            flash('success', 'Master wilayah berhasil ditambahkan.');
+        }
 
-        flash('success', 'Master wilayah berhasil ditambahkan.');
         redirectCustomers('#master-wilayah');
     }
 
@@ -291,6 +311,28 @@ if ($editId > 0) {
     $editCustomer = $stmt->fetch();
 }
 
+$editRegionId = (int)($_GET['edit_region'] ?? 0);
+$editRegion = null;
+if ($editRegionId > 0) {
+    $stmt = $pdo->prepare('SELECT * FROM service_regions WHERE id = :id LIMIT 1');
+    $stmt->execute([':id' => $editRegionId]);
+    $editRegion = $stmt->fetch() ?: null;
+}
+
+$serviceRegions = $pdo->query('SELECT * FROM service_regions
+    ORDER BY service_type ASC, village ASC,
+        CASE WHEN rw IS NULL OR rw = "" THEN "999" ELSE rw END ASC,
+        district ASC, regency ASC, id DESC')->fetchAll();
+
+$serviceRegionMap = [];
+foreach ($serviceRegions as $region) {
+    $serviceRegionMap[(int)$region['id']] = $region;
+}
+
+$filterRegionId = (int)($_GET['region'] ?? 0);
+$selectedRegionFilter = $filterRegionId > 0 ? ($serviceRegionMap[$filterRegionId] ?? null) : null;
+$selectedRegionKey = $selectedRegionFilter ? customerRegionKey($selectedRegionFilter) : '';
+
 $customers = $pdo->query('SELECT c.*, u.username AS customer_username,
         cls.password_plain AS customer_login_id
     FROM customers c
@@ -298,10 +340,11 @@ $customers = $pdo->query('SELECT c.*, u.username AS customer_username,
     LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
     ORDER BY CASE WHEN c.customer_no IS NULL OR c.customer_no <= 0 THEN 999999 ELSE c.customer_no END ASC, c.id ASC')->fetchAll();
 
-$serviceRegions = $pdo->query('SELECT * FROM service_regions
-    ORDER BY service_type ASC, village ASC,
-        CASE WHEN rw IS NULL OR rw = "" THEN "999" ELSE rw END ASC,
-        district ASC, regency ASC, id DESC')->fetchAll();
+if ($selectedRegionKey !== '') {
+    $customers = array_values(array_filter($customers, static function (array $customer) use ($selectedRegionKey): bool {
+        return customerRegionKey($customer) === $selectedRegionKey;
+    }));
+}
 
 require __DIR__ . '/includes/header.php';
 ?>
@@ -417,35 +460,41 @@ require __DIR__ . '/includes/header.php';
 <section class="bg-white rounded-xl shadow p-4 mt-4" id="master-wilayah">
   <div class="grid lg:grid-cols-2 gap-4">
     <div>
-      <h2 class="font-semibold mb-3">Master Wilayah Layanan</h2>
+      <h2 class="font-semibold mb-3"><?= $editRegion ? 'Edit Master Wilayah Layanan' : 'Master Wilayah Layanan' ?></h2>
       <form method="post" class="space-y-3">
         <input type="hidden" name="action" value="save_region">
+        <input type="hidden" name="region_id" value="<?= (int)($editRegion['id'] ?? 0) ?>">
         <div>
           <label class="text-sm">Jenis Layanan</label>
           <select name="service_type" class="mt-1 w-full border rounded px-3 py-2" required>
-            <option value="swadaya">Swadaya Air</option>
-            <option value="distribusi">Distribusi Air</option>
+            <option value="swadaya" <?= ($editRegion['service_type'] ?? 'swadaya') === 'swadaya' ? 'selected' : '' ?>>Swadaya Air</option>
+            <option value="distribusi" <?= ($editRegion['service_type'] ?? '') === 'distribusi' ? 'selected' : '' ?>>Distribusi Air</option>
           </select>
         </div>
         <div>
           <label class="text-sm">Desa</label>
-          <input name="village" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: Sumbermanjing Kulon" required>
+          <input name="village" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: Sumbermanjing Kulon" value="<?= e((string)($editRegion['village'] ?? '')) ?>" required>
         </div>
         <div class="grid md:grid-cols-3 gap-3">
           <div>
             <label class="text-sm">RW</label>
-            <input name="rw" class="mt-1 w-full border rounded px-3 py-2" placeholder="09">
+            <input name="rw" class="mt-1 w-full border rounded px-3 py-2" placeholder="09" value="<?= e((string)($editRegion['rw'] ?? '')) ?>">
           </div>
           <div>
             <label class="text-sm">Kecamatan</label>
-            <input name="district" class="mt-1 w-full border rounded px-3 py-2" placeholder="Pagak">
+            <input name="district" class="mt-1 w-full border rounded px-3 py-2" placeholder="Pagak" value="<?= e((string)($editRegion['district'] ?? '')) ?>">
           </div>
           <div>
             <label class="text-sm">Kabupaten</label>
-            <input name="regency" class="mt-1 w-full border rounded px-3 py-2" placeholder="Malang">
+            <input name="regency" class="mt-1 w-full border rounded px-3 py-2" placeholder="Malang" value="<?= e((string)($editRegion['regency'] ?? '')) ?>">
           </div>
         </div>
-        <button class="bg-indigo-700 text-white rounded px-4 py-2">Tambah Master Wilayah</button>
+        <div class="flex gap-2 flex-wrap">
+          <button class="bg-indigo-700 text-white rounded px-4 py-2"><?= $editRegion ? 'Update Master Wilayah' : 'Tambah Master Wilayah' ?></button>
+          <?php if ($editRegion): ?>
+            <a href="customers.php#master-wilayah" class="px-4 py-2 rounded bg-slate-200 text-slate-800">Batal Edit</a>
+          <?php endif; ?>
+        </div>
       </form>
     </div>
 
@@ -466,14 +515,13 @@ require __DIR__ . '/includes/header.php';
                 <td class="py-2 pr-3"><?= e(customerServiceTypeLabel((string)$region['service_type'])) ?></td>
                 <td class="py-2 pr-3"><div class="address-cell" title="<?= e(customerRegionLabel($region)) ?>"><?= e(customerRegionLabel($region)) ?></div></td>
                 <td class="py-2 pr-3">
+                  <a class="px-2 py-1 rounded bg-slate-200" href="customers.php?edit_region=<?= (int)$region['id'] ?>#master-wilayah">Edit</a>
                   <?php if ($user['role'] === 'admin'): ?>
                     <form method="post" class="inline" onsubmit="return confirm('Hapus master wilayah ini?')">
                       <input type="hidden" name="action" value="delete_region">
                       <input type="hidden" name="id" value="<?= (int)$region['id'] ?>">
                       <button class="px-2 py-1 rounded bg-red-100 text-red-700">Hapus</button>
                     </form>
-                  <?php else: ?>
-                    <span class="text-xs text-slate-500">Lihat saja</span>
                   <?php endif; ?>
                 </td>
               </tr>
@@ -489,7 +537,21 @@ require __DIR__ . '/includes/header.php';
 </section>
 
 <section class="bg-white rounded-xl shadow p-4 mt-4">
-  <h2 class="font-semibold mb-3">Daftar Pelanggan</h2>
+  <div class="flex justify-between gap-3 flex-wrap items-center mb-3">
+    <h2 class="font-semibold">Daftar Pelanggan</h2>
+    <form method="get" class="flex gap-2 flex-wrap items-center text-sm">
+      <select name="region" class="border rounded px-3 py-2">
+        <option value="0">Semua Wilayah</option>
+        <?php foreach ($serviceRegions as $region): ?>
+          <option value="<?= (int)$region['id'] ?>" <?= $filterRegionId === (int)$region['id'] ? 'selected' : '' ?>><?= e(customerRegionLabel($region)) ?></option>
+        <?php endforeach; ?>
+      </select>
+      <button class="bg-slate-900 text-white rounded px-4 py-2">Filter</button>
+      <?php if ($filterRegionId > 0): ?>
+        <a href="customers.php" class="px-4 py-2 rounded bg-slate-200 text-slate-800">Reset</a>
+      <?php endif; ?>
+    </form>
+  </div>
   <div class="overflow-auto table-wrap">
     <table class="min-w-full text-sm js-data-table table-soft" data-page-size="10">
       <thead>

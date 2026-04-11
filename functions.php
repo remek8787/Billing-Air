@@ -269,19 +269,26 @@ function customerServiceTypeLabel(?string $value): string
     return '';
 }
 
-function customerRegionLabel(array $customer, string $fallback = '-'): string
+function defaultCustomerRegionParts(): array
 {
-    $defaults = defined('DEFAULT_CUSTOMER_REGION') && is_array(DEFAULT_CUSTOMER_REGION)
+    return defined('DEFAULT_CUSTOMER_REGION') && is_array(DEFAULT_CUSTOMER_REGION)
         ? DEFAULT_CUSTOMER_REGION
         : [];
+}
 
-    $rawServiceType = trim((string)($customer['service_type'] ?? ''));
-    $serviceType = customerServiceTypeLabel($rawServiceType !== '' ? $rawServiceType : ($defaults['service_type'] ?? ''));
+function customerRegionData(array $customer, bool $withFallback = true): array
+{
+    $defaults = $withFallback ? defaultCustomerRegionParts() : [];
+
+    $serviceType = trim((string)($customer['service_type'] ?? ''));
     $village = trim((string)($customer['village'] ?? ''));
     $rw = trim((string)($customer['rw'] ?? ''));
     $district = trim((string)($customer['district'] ?? ''));
     $regency = trim((string)($customer['regency'] ?? ''));
 
+    if ($serviceType === '') {
+        $serviceType = trim((string)($defaults['service_type'] ?? ''));
+    }
     if ($village === '') {
         $village = trim((string)($defaults['village'] ?? ''));
     }
@@ -294,6 +301,37 @@ function customerRegionLabel(array $customer, string $fallback = '-'): string
     if ($regency === '') {
         $regency = trim((string)($defaults['regency'] ?? ''));
     }
+
+    return [
+        'service_type' => $serviceType,
+        'village' => $village,
+        'rw' => $rw,
+        'district' => $district,
+        'regency' => $regency,
+    ];
+}
+
+function customerRegionKey(array $customer, bool $withFallback = true): string
+{
+    $region = customerRegionData($customer, $withFallback);
+
+    return implode('|', [
+        strtolower(trim((string)($region['service_type'] ?? ''))),
+        strtolower(trim((string)($region['village'] ?? ''))),
+        strtolower(trim((string)($region['rw'] ?? ''))),
+        strtolower(trim((string)($region['district'] ?? ''))),
+        strtolower(trim((string)($region['regency'] ?? ''))),
+    ]);
+}
+
+function customerRegionLabel(array $customer, string $fallback = '-'): string
+{
+    $region = customerRegionData($customer, true);
+    $serviceType = customerServiceTypeLabel($region['service_type'] ?? '');
+    $village = trim((string)($region['village'] ?? ''));
+    $rw = trim((string)($region['rw'] ?? ''));
+    $district = trim((string)($region['district'] ?? ''));
+    $regency = trim((string)($region['regency'] ?? ''));
 
     $locationParts = [];
     if ($village !== '') {

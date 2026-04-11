@@ -39,7 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit;
 }
 
-$customers = $pdo->query('SELECT c.id, c.name, c.address,
+$serviceRegions = $pdo->query('SELECT * FROM service_regions
+    ORDER BY service_type ASC, village ASC,
+        CASE WHEN rw IS NULL OR rw = "" THEN "999" ELSE rw END ASC,
+        district ASC, regency ASC, id DESC')->fetchAll();
+
+$customers = $pdo->query('SELECT c.id, c.name, c.address, c.service_type, c.village, c.rw, c.district, c.regency,
         cls.password_plain AS customer_login_id
     FROM customers c
     LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
@@ -55,6 +60,7 @@ if ($editId > 0) {
 }
 
 $latest = $pdo->query('SELECT mr.*, c.name AS customer_name, c.address AS customer_address,
+        c.service_type, c.village, c.rw, c.district, c.regency,
         cls.password_plain AS customer_login_id,
         u.full_name AS input_name
     FROM meter_readings mr
@@ -79,15 +85,30 @@ require __DIR__ . '/includes/header.php';
     <form method="post" class="space-y-3">
       <input type="hidden" name="action" value="save_reading">
       <div>
+        <label class="text-sm">Wilayah</label>
+        <select class="mt-1 w-full border rounded px-3 py-2" id="reading_region_id">
+          <option value="">Semua wilayah</option>
+          <?php foreach ($serviceRegions as $region): ?>
+            <option value="<?= (int)$region['id'] ?>" data-region-key="<?= e(customerRegionKey($region)) ?>"><?= e(customerRegionLabel($region)) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <p class="text-xs text-slate-500 mt-1">Pilih wilayah dulu supaya daftar pelanggan lebih rapi.</p>
+      </div>
+      <div>
         <label class="text-sm">Pelanggan</label>
         <select name="customer_id" required class="mt-1 w-full border rounded px-3 py-2" id="reading_customer_id">
           <option value="">Pilih pelanggan</option>
           <?php foreach ($customers as $c): ?>
-            <?php $defaultId = !empty($c['customer_login_id']) ? (string)$c['customer_login_id'] : defaultCustomerPasswordById((int)$c['id']); ?>
-            <option value="<?= (int)$c['id'] ?>" <?= $selectedCustomerId === (int)$c['id'] ? 'selected' : '' ?>><?= e($defaultId . ' • ' . $c['name']) ?></option>
+            <?php
+              $defaultId = !empty($c['customer_login_id']) ? (string)$c['customer_login_id'] : defaultCustomerPasswordById((int)$c['id']);
+              $regionLabel = customerRegionLabel($c);
+            ?>
+            <option value="<?= (int)$c['id'] ?>"
+                    data-region-key="<?= e(customerRegionKey($c)) ?>"
+                    <?= $selectedCustomerId === (int)$c['id'] ? 'selected' : '' ?>><?= e($defaultId . ' • ' . $c['name'] . ' • ' . $regionLabel) ?></option>
           <?php endforeach; ?>
         </select>
-        <p class="text-xs text-slate-500 mt-1">Format tampil: ID Pelanggan • Nama</p>
+        <p class="text-xs text-slate-500 mt-1">Format tampil: ID Pelanggan • Nama • Wilayah</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-2">
@@ -162,7 +183,10 @@ require __DIR__ . '/includes/header.php';
             <span class="id-pill"><?= e($idPelanggan) ?></span>
           </td>
           <td class="py-2 pr-3"><div class="name-cell"><?= e($r['customer_name']) ?></div></td>
-          <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)($r['customer_address'] ?? '-')) ?>"><?= e((string)($r['customer_address'] ?? '-')) ?></div></td>
+          <td class="py-2 pr-3">
+            <div class="address-cell" title="<?= e((string)($r['customer_address'] ?? '-')) ?>"><?= e((string)($r['customer_address'] ?? '-')) ?></div>
+            <div class="bill-subline"><b>Wilayah:</b> <?= e(customerRegionLabel($r)) ?></div>
+          </td>
           <td class="py-2 pr-3"><?= (int)$r['meter_awal'] ?></td>
           <td class="py-2 pr-3"><?= (int)$r['meter_akhir'] ?></td>
           <td class="py-2 pr-3"><?= (int)$r['usage_m3'] ?> m³</td>
@@ -190,17 +214,77 @@ require __DIR__ . '/includes/header.php';
 (() => {
   const initReadingPicker = () => {
     const select = document.getElementById('reading_customer_id');
+    const regionSelect = document.getElementById('reading_region_id');
     if (!select || select.dataset.pickerInit === '1') return;
     select.dataset.pickerInit = '1';
 
+    const baseOptions = Array.from(select.options).map((opt) => ({
+      value: opt.value,
+      text: opt.text,
+      selected: opt.selected,
+      regionKey: opt.dataset.regionKey || ''
+    }));
+
+    let tom = null;
+    const selectedValue = () => {
+      if (tom) {
+        return tom.getValue();
+      }
+      return select.value;
+    };
+
+    const renderOptions = (regionKey = '') => {
+      const keepValue = selectedValue();
+      const filtered = baseOptions.filter((opt) => {
+        if (opt.value === '') return true;
+        return regionKey === '' || opt.regionKey === regionKey;
+      });
+
+      if (tom) {
+        tom.clear(true);
+        tom.clearOptions();
+        tom.addOptions(filtered.map((opt) => ({ value: opt.value, text: opt.text })));
+        tom.refreshOptions(false);
+        const stillExists = filtered.some((opt) => opt.value === keepValue);
+        if (stillExists && keepValue !== '') {
+          tom.setValue(keepValue, true);
+        }
+        return;
+      }
+
+      select.innerHTML = '';
+      filtered.forEach((opt) => {
+        const option = document.createElement('option');
+        option.value = opt.value;
+        option.textContent = opt.text;
+        option.dataset.regionKey = opt.regionKey;
+        if (opt.value === keepValue || (keepValue === '' && opt.selected)) {
+          option.selected = true;
+        }
+        select.appendChild(option);
+      });
+    };
+
     if (window.TomSelect) {
-      new TomSelect(select, {
+      tom = new TomSelect(select, {
         create: false,
         maxItems: 1,
         searchField: ['text'],
-        placeholder: 'Ketik ID / nama pelanggan...'
+        placeholder: 'Ketik ID / nama pelanggan / wilayah...'
       });
     }
+
+    const applyRegion = () => {
+      const selected = regionSelect ? regionSelect.options[regionSelect.selectedIndex] : null;
+      const regionKey = selected ? (selected.dataset.regionKey || '') : '';
+      renderOptions(regionKey);
+    };
+
+    if (regionSelect) {
+      regionSelect.addEventListener('change', applyRegion);
+    }
+
+    applyRegion();
   };
 
   if (document.readyState === 'complete') {

@@ -90,6 +90,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $filterStatus = trim($_GET['status'] ?? '');
 $filterYear = (int)($_GET['year'] ?? 0);
 $filterMonth = (int)($_GET['month'] ?? 0);
+$filterRegionId = (int)($_GET['region'] ?? 0);
+
+$serviceRegions = $pdo->query('SELECT * FROM service_regions
+    ORDER BY service_type ASC, village ASC,
+        CASE WHEN rw IS NULL OR rw = "" THEN "999" ELSE rw END ASC,
+        district ASC, regency ASC, id DESC')->fetchAll();
+$serviceRegionMap = [];
+foreach ($serviceRegions as $region) {
+    $serviceRegionMap[(int)$region['id']] = $region;
+}
+$selectedRegionFilter = $filterRegionId > 0 ? ($serviceRegionMap[$filterRegionId] ?? null) : null;
+$selectedRegionKey = $selectedRegionFilter ? customerRegionKey($selectedRegionFilter) : '';
 
 $where = [];
 $params = [];
@@ -132,6 +144,12 @@ $sql .= ' ORDER BY mr.period_year DESC, mr.period_month DESC, c.name ASC';
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $bills = $stmt->fetchAll();
+
+if ($selectedRegionKey !== '') {
+    $bills = array_values(array_filter($bills, static function (array $bill) use ($selectedRegionKey): bool {
+        return customerRegionKey($bill) === $selectedRegionKey;
+    }));
+}
 
 $customerIdentity = null;
 if ($user['role'] === 'customer' && !empty($user['customer_id'])) {
@@ -180,7 +198,7 @@ require __DIR__ . '/includes/header.php';
 
 <section class="bg-white rounded-xl shadow p-4 mb-4">
   <h2 class="font-semibold mb-3"><?= $user['role'] === 'customer' ? 'Tagihan Air Saya' : 'Daftar Tagihan Air' ?></h2>
-  <form class="grid md:grid-cols-4 gap-2 text-sm">
+  <form class="grid md:grid-cols-5 gap-2 text-sm">
     <select name="status" class="border rounded px-3 py-2">
       <option value="">Semua Status</option>
       <option value="paid" <?= $filterStatus === 'paid' ? 'selected' : '' ?>>Lunas</option>
@@ -193,7 +211,16 @@ require __DIR__ . '/includes/header.php';
         <option value="<?= $m ?>" <?= $filterMonth === $m ? 'selected' : '' ?>><?= e(monthName($m)) ?></option>
       <?php endfor; ?>
     </select>
+    <select name="region" class="border rounded px-3 py-2">
+      <option value="0">Semua Wilayah</option>
+      <?php foreach ($serviceRegions as $region): ?>
+        <option value="<?= (int)$region['id'] ?>" <?= $filterRegionId === (int)$region['id'] ? 'selected' : '' ?>><?= e(customerRegionLabel($region)) ?></option>
+      <?php endforeach; ?>
+    </select>
     <button class="bg-slate-900 text-white rounded px-4 py-2">Filter</button>
+    <?php if ($filterStatus !== '' || $filterYear > 0 || $filterMonth > 0 || $filterRegionId > 0): ?>
+      <a href="bills.php" class="px-4 py-2 rounded bg-slate-200 text-slate-800 text-center">Reset</a>
+    <?php endif; ?>
   </form>
 
   <?php if ($user['role'] !== 'customer'): ?>
