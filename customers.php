@@ -78,8 +78,54 @@ function nextCustomerNumber(PDO $pdo): int
     return $n;
 }
 
+function redirectCustomers(string $suffix = ''): void
+{
+    header('Location: customers.php' . $suffix);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
+
+    if ($action === 'save_region') {
+        $serviceType = trim((string)($_POST['service_type'] ?? ''));
+        $village = trim((string)($_POST['village'] ?? ''));
+        $rw = trim((string)($_POST['rw'] ?? ''));
+        $district = trim((string)($_POST['district'] ?? ''));
+        $regency = trim((string)($_POST['regency'] ?? ''));
+
+        if (!in_array($serviceType, ['swadaya', 'distribusi'], true)) {
+            flash('error', 'Jenis layanan wilayah harus Swadaya atau Distribusi.');
+            redirectCustomers('#master-wilayah');
+        }
+
+        if ($village === '') {
+            flash('error', 'Desa wilayah wajib diisi.');
+            redirectCustomers('#master-wilayah');
+        }
+
+        $stmt = $pdo->prepare('INSERT INTO service_regions(service_type, village, rw, district, regency)
+            VALUES(:service_type, :village, :rw, :district, :regency)');
+        $stmt->execute([
+            ':service_type' => $serviceType,
+            ':village' => $village,
+            ':rw' => $rw,
+            ':district' => $district,
+            ':regency' => $regency,
+        ]);
+
+        flash('success', 'Master wilayah berhasil ditambahkan.');
+        redirectCustomers('#master-wilayah');
+    }
+
+    if ($action === 'delete_region' && $user['role'] === 'admin') {
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id > 0) {
+            $pdo->prepare('DELETE FROM service_regions WHERE id = :id')->execute([':id' => $id]);
+            flash('success', 'Master wilayah dihapus.');
+        }
+        redirectCustomers('#master-wilayah');
+    }
 
     if ($action === 'save_customer') {
         $id = (int)($_POST['id'] ?? 0);
@@ -252,15 +298,37 @@ $customers = $pdo->query('SELECT c.*, u.username AS customer_username,
     LEFT JOIN customer_login_secrets cls ON cls.user_id = u.id
     ORDER BY CASE WHEN c.customer_no IS NULL OR c.customer_no <= 0 THEN 999999 ELSE c.customer_no END ASC, c.id ASC')->fetchAll();
 
+$serviceRegions = $pdo->query('SELECT * FROM service_regions
+    ORDER BY service_type ASC, village ASC,
+        CASE WHEN rw IS NULL OR rw = "" THEN "999" ELSE rw END ASC,
+        district ASC, regency ASC, id DESC')->fetchAll();
+
 require __DIR__ . '/includes/header.php';
 ?>
 
 <div class="grid lg:grid-cols-3 gap-4">
   <section class="bg-white rounded-xl shadow p-4">
     <h2 class="font-semibold mb-3"><?= $editCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan' ?></h2>
-    <form method="post" class="space-y-3">
+    <form method="post" class="space-y-3" id="customer-form">
       <input type="hidden" name="action" value="save_customer">
       <input type="hidden" name="id" value="<?= (int)($editCustomer['id'] ?? 0) ?>">
+      <div>
+        <label class="text-sm">Pilih Master Wilayah (opsional)</label>
+        <select id="region_template_id" class="mt-1 w-full border rounded px-3 py-2">
+          <option value="">Pilih template wilayah</option>
+          <?php foreach ($serviceRegions as $region): ?>
+            <option value="<?= (int)$region['id'] ?>"
+                    data-service-type="<?= e((string)$region['service_type']) ?>"
+                    data-village="<?= e((string)($region['village'] ?? '')) ?>"
+                    data-rw="<?= e((string)($region['rw'] ?? '')) ?>"
+                    data-district="<?= e((string)($region['district'] ?? '')) ?>"
+                    data-regency="<?= e((string)($region['regency'] ?? '')) ?>">
+              <?= e(customerRegionLabel($region)) ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+        <div class="text-xs text-slate-500 mt-1">Pilih template supaya field wilayah pelanggan terisi otomatis.</div>
+      </div>
       <div>
         <label class="text-sm">Nama</label>
         <input name="name" required class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['name'] ?? '') ?>">
@@ -275,7 +343,7 @@ require __DIR__ . '/includes/header.php';
       </div>
       <div>
         <label class="text-sm">Jenis Layanan</label>
-        <select name="service_type" class="mt-1 w-full border rounded px-3 py-2">
+        <select id="customer_service_type" name="service_type" class="mt-1 w-full border rounded px-3 py-2">
           <option value="">Pilih jenis layanan</option>
           <option value="swadaya" <?= ($editCustomer['service_type'] ?? '') === 'swadaya' ? 'selected' : '' ?>>Swadaya Air</option>
           <option value="distribusi" <?= ($editCustomer['service_type'] ?? '') === 'distribusi' ? 'selected' : '' ?>>Distribusi Air</option>
@@ -283,19 +351,19 @@ require __DIR__ . '/includes/header.php';
       </div>
       <div>
         <label class="text-sm">Desa</label>
-        <input name="village" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['village'] ?? '') ?>" placeholder="contoh: Sumbermanjing Kulon">
+        <input id="customer_village" name="village" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['village'] ?? '') ?>" placeholder="contoh: Sumbermanjing Kulon">
       </div>
       <div>
         <label class="text-sm">RW</label>
-        <input name="rw" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['rw'] ?? '') ?>" placeholder="contoh: 09">
+        <input id="customer_rw" name="rw" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['rw'] ?? '') ?>" placeholder="contoh: 09">
       </div>
       <div>
         <label class="text-sm">Kecamatan</label>
-        <input name="district" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['district'] ?? '') ?>" placeholder="contoh: Pagak">
+        <input id="customer_district" name="district" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['district'] ?? '') ?>" placeholder="contoh: Pagak">
       </div>
       <div>
         <label class="text-sm">Kabupaten</label>
-        <input name="regency" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['regency'] ?? '') ?>" placeholder="contoh: Malang">
+        <input id="customer_regency" name="regency" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['regency'] ?? '') ?>" placeholder="contoh: Malang">
       </div>
       <div>
         <label class="text-sm">Tanggal Pemasangan</label>
@@ -345,6 +413,80 @@ require __DIR__ . '/includes/header.php';
     <p class="text-xs text-slate-500 mt-3">Admin bisa ubah tarif di menu Pengaturan.</p>
   </section>
 </div>
+
+<section class="bg-white rounded-xl shadow p-4 mt-4" id="master-wilayah">
+  <div class="grid lg:grid-cols-2 gap-4">
+    <div>
+      <h2 class="font-semibold mb-3">Master Wilayah Layanan</h2>
+      <form method="post" class="space-y-3">
+        <input type="hidden" name="action" value="save_region">
+        <div>
+          <label class="text-sm">Jenis Layanan</label>
+          <select name="service_type" class="mt-1 w-full border rounded px-3 py-2" required>
+            <option value="swadaya">Swadaya Air</option>
+            <option value="distribusi">Distribusi Air</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm">Desa</label>
+          <input name="village" class="mt-1 w-full border rounded px-3 py-2" placeholder="contoh: Sumbermanjing Kulon" required>
+        </div>
+        <div class="grid md:grid-cols-3 gap-3">
+          <div>
+            <label class="text-sm">RW</label>
+            <input name="rw" class="mt-1 w-full border rounded px-3 py-2" placeholder="09">
+          </div>
+          <div>
+            <label class="text-sm">Kecamatan</label>
+            <input name="district" class="mt-1 w-full border rounded px-3 py-2" placeholder="Pagak">
+          </div>
+          <div>
+            <label class="text-sm">Kabupaten</label>
+            <input name="regency" class="mt-1 w-full border rounded px-3 py-2" placeholder="Malang">
+          </div>
+        </div>
+        <button class="bg-indigo-700 text-white rounded px-4 py-2">Tambah Master Wilayah</button>
+      </form>
+    </div>
+
+    <div>
+      <h2 class="font-semibold mb-3">Daftar Master Wilayah</h2>
+      <div class="overflow-auto table-wrap">
+        <table class="min-w-full text-sm js-data-table table-soft" data-page-size="5">
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-2 pr-3">Jenis</th>
+              <th class="py-2 pr-3">Wilayah</th>
+              <th class="py-2 pr-3">Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($serviceRegions as $region): ?>
+              <tr class="border-b">
+                <td class="py-2 pr-3"><?= e(customerServiceTypeLabel((string)$region['service_type'])) ?></td>
+                <td class="py-2 pr-3"><div class="address-cell" title="<?= e(customerRegionLabel($region)) ?>"><?= e(customerRegionLabel($region)) ?></div></td>
+                <td class="py-2 pr-3">
+                  <?php if ($user['role'] === 'admin'): ?>
+                    <form method="post" class="inline" onsubmit="return confirm('Hapus master wilayah ini?')">
+                      <input type="hidden" name="action" value="delete_region">
+                      <input type="hidden" name="id" value="<?= (int)$region['id'] ?>">
+                      <button class="px-2 py-1 rounded bg-red-100 text-red-700">Hapus</button>
+                    </form>
+                  <?php else: ?>
+                    <span class="text-xs text-slate-500">Lihat saja</span>
+                  <?php endif; ?>
+                </td>
+              </tr>
+            <?php endforeach; ?>
+            <?php if (!$serviceRegions): ?>
+              <tr><td colspan="3" class="py-4 text-slate-500">Belum ada master wilayah. Tambahkan dari form sebelah kiri.</td></tr>
+            <?php endif; ?>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
 
 <section class="bg-white rounded-xl shadow p-4 mt-4">
   <h2 class="font-semibold mb-3">Daftar Pelanggan</h2>
@@ -476,10 +618,41 @@ require __DIR__ . '/includes/header.php';
     });
   };
 
-  if (document.readyState === 'complete') {
+  const initRegionTemplate = () => {
+    const select = document.getElementById('region_template_id');
+    const serviceType = document.getElementById('customer_service_type');
+    const village = document.getElementById('customer_village');
+    const rw = document.getElementById('customer_rw');
+    const district = document.getElementById('customer_district');
+    const regency = document.getElementById('customer_regency');
+
+    if (!select || select.dataset.regionInit === '1') return;
+    select.dataset.regionInit = '1';
+
+    const applyRegion = (value) => {
+      if (!value) return;
+      const opt = Array.from(select.options).find((o) => o.value === String(value));
+      if (!opt) return;
+
+      if (serviceType) serviceType.value = opt.dataset.serviceType || '';
+      if (village) village.value = opt.dataset.village || '';
+      if (rw) rw.value = opt.dataset.rw || '';
+      if (district) district.value = opt.dataset.district || '';
+      if (regency) regency.value = opt.dataset.regency || '';
+    };
+
+    select.addEventListener('change', () => applyRegion(select.value));
+  };
+
+  const boot = () => {
     initCustomerPicker();
+    initRegionTemplate();
+  };
+
+  if (document.readyState === 'complete') {
+    boot();
   } else {
-    window.addEventListener('load', initCustomerPicker, { once: true });
+    window.addEventListener('load', boot, { once: true });
   }
 })();
 </script>

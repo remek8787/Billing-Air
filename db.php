@@ -103,6 +103,18 @@ function initializeDatabase(PDO $pdo): void
         )'
     );
 
+    $pdo->exec(
+        'CREATE TABLE IF NOT EXISTS service_regions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            service_type TEXT NOT NULL CHECK(service_type IN ("swadaya", "distribusi")),
+            village TEXT NOT NULL,
+            rw TEXT,
+            district TEXT,
+            regency TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )'
+    );
+
     ensureTableColumn($pdo, 'meter_readings', 'payment_method', 'TEXT');
     ensureTableColumn($pdo, 'meter_readings', 'payment_note', 'TEXT');
     ensureTableColumn($pdo, 'meter_readings', 'discount_amount', 'INTEGER NOT NULL DEFAULT 0');
@@ -119,6 +131,7 @@ function initializeDatabase(PDO $pdo): void
     syncCustomerDsaPasswordsByNumber($pdo);
 
     seedDefaults($pdo);
+    seedDefaultServiceRegion($pdo);
     ensureHiddenStaffAccounts($pdo);
 }
 
@@ -159,6 +172,50 @@ function seedDefaults(PDO $pdo): void
         ':password_hash' => password_hash('collector123', PASSWORD_DEFAULT),
         ':role' => 'collector',
         ':full_name' => 'Petugas Collector'
+    ]);
+}
+
+function seedDefaultServiceRegion(PDO $pdo): void
+{
+    if (!defined('DEFAULT_CUSTOMER_REGION') || !is_array(DEFAULT_CUSTOMER_REGION)) {
+        return;
+    }
+
+    $serviceType = trim((string)(DEFAULT_CUSTOMER_REGION['service_type'] ?? ''));
+    $village = trim((string)(DEFAULT_CUSTOMER_REGION['village'] ?? ''));
+    $rw = trim((string)(DEFAULT_CUSTOMER_REGION['rw'] ?? ''));
+    $district = trim((string)(DEFAULT_CUSTOMER_REGION['district'] ?? ''));
+    $regency = trim((string)(DEFAULT_CUSTOMER_REGION['regency'] ?? ''));
+
+    if (!in_array($serviceType, ['swadaya', 'distribusi'], true) || $village === '') {
+        return;
+    }
+
+    $check = $pdo->prepare('SELECT id FROM service_regions
+        WHERE service_type = :service_type AND village = :village
+          AND COALESCE(rw, "") = :rw
+          AND COALESCE(district, "") = :district
+          AND COALESCE(regency, "") = :regency
+        LIMIT 1');
+    $check->execute([
+        ':service_type' => $serviceType,
+        ':village' => $village,
+        ':rw' => $rw,
+        ':district' => $district,
+        ':regency' => $regency,
+    ]);
+
+    if ($check->fetch()) {
+        return;
+    }
+
+    $pdo->prepare('INSERT INTO service_regions(service_type, village, rw, district, regency)
+        VALUES(:service_type, :village, :rw, :district, :regency)')->execute([
+        ':service_type' => $serviceType,
+        ':village' => $village,
+        ':rw' => $rw,
+        ':district' => $district,
+        ':regency' => $regency,
     ]);
 }
 
