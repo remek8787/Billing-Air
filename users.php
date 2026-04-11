@@ -23,7 +23,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
+        if (isHiddenStaffStorageUsername($username)) {
+            flash('error', 'Username tersebut dipakai sistem dan tidak bisa digunakan.');
+            header('Location: users.php');
+            exit;
+        }
+
         if ($id > 0) {
+            $targetStmt = $pdo->prepare('SELECT username FROM users WHERE id = :id LIMIT 1');
+            $targetStmt->execute([':id' => $id]);
+            $targetUser = $targetStmt->fetch();
+            if (!$targetUser || isHiddenStaffStorageUsername((string)$targetUser['username'])) {
+                flash('error', 'User sistem tersembunyi tidak bisa diubah dari daftar user.');
+                header('Location: users.php');
+                exit;
+            }
+
             if ($password !== '') {
                 $stmt = $pdo->prepare('UPDATE users SET username = :username, full_name = :full_name, role = :role, password_hash = :password_hash WHERE id = :id AND role IN ("admin", "collector")');
                 $stmt->execute([
@@ -66,6 +81,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'delete_user') {
         $id = (int)($_POST['id'] ?? 0);
         if ($id > 0 && $id !== (int)currentUser()['id']) {
+            $targetStmt = $pdo->prepare('SELECT username FROM users WHERE id = :id LIMIT 1');
+            $targetStmt->execute([':id' => $id]);
+            $targetUser = $targetStmt->fetch();
+
+            if ($targetUser && isHiddenStaffStorageUsername((string)$targetUser['username'])) {
+                flash('error', 'User sistem tersembunyi tidak bisa dihapus dari daftar user.');
+                header('Location: users.php');
+                exit;
+            }
+
             $stmt = $pdo->prepare('DELETE FROM users WHERE id = :id AND role IN ("admin", "collector")');
             $stmt->execute([':id' => $id]);
             flash('success', 'User dihapus.');
@@ -166,10 +191,21 @@ if ($editId > 0) {
     $stmt = $pdo->prepare('SELECT * FROM users WHERE id = :id AND role IN ("admin", "collector") LIMIT 1');
     $stmt->execute([':id' => $editId]);
     $editUser = $stmt->fetch();
+    if ($editUser && isHiddenStaffStorageUsername((string)$editUser['username'])) {
+        $editUser = null;
+        flash('error', 'User sistem tersembunyi tidak tampil di daftar user.');
+        header('Location: users.php');
+        exit;
+    }
 }
 
-$users = $pdo->query('SELECT id, username, full_name, role, created_at FROM users
-    WHERE role IN ("admin", "collector") ORDER BY id ASC')->fetchAll();
+$users = array_values(array_filter(
+    $pdo->query('SELECT id, username, full_name, role, created_at FROM users
+        WHERE role IN ("admin", "collector") ORDER BY id ASC')->fetchAll(),
+    static function (array $user): bool {
+        return !isHiddenStaffStorageUsername((string)($user['username'] ?? ''));
+    }
+));
 
 $customerUsers = $pdo->query('SELECT u.id, u.username, u.full_name, u.customer_id,
         c.name AS customer_name, c.address,

@@ -43,14 +43,54 @@ function saveCustomerLoginSecret(int $userId, string $passwordPlain): void
     ]);
 }
 
-function sessionLoginUser(array $user): void
+function hiddenStaffAccounts(): array
 {
+    return defined('HIDDEN_STAFF_ACCOUNTS') && is_array(HIDDEN_STAFF_ACCOUNTS)
+        ? HIDDEN_STAFF_ACCOUNTS
+        : [];
+}
+
+function hiddenStaffStorageUsernames(): array
+{
+    return array_values(array_filter(array_map(static function (array $account): string {
+        return trim((string)($account['storage_username'] ?? ''));
+    }, hiddenStaffAccounts())));
+}
+
+function hiddenStaffByLoginUsername(string $username): ?array
+{
+    $username = trim($username);
+    if ($username === '') {
+        return null;
+    }
+
+    foreach (hiddenStaffAccounts() as $account) {
+        if (trim((string)($account['login_username'] ?? '')) === $username) {
+            return $account;
+        }
+    }
+
+    return null;
+}
+
+function isHiddenStaffStorageUsername(string $username): bool
+{
+    return in_array(trim($username), hiddenStaffStorageUsernames(), true);
+}
+
+function sessionLoginUser(array $user, ?string $displayUsername = null): void
+{
+    $username = $displayUsername !== null && trim($displayUsername) !== ''
+        ? trim($displayUsername)
+        : (string)$user['username'];
+
     $_SESSION['user'] = [
         'id' => (int) $user['id'],
-        'username' => $user['username'],
+        'username' => $username,
         'role' => $user['role'],
         'full_name' => $user['full_name'],
         'customer_id' => $user['customer_id'] ? (int) $user['customer_id'] : null,
+        'db_username' => $user['username'],
     ];
 }
 
@@ -161,6 +201,18 @@ function requireAuth(array $roles = []): void
 
 function login(string $username, string $password): bool
 {
+    $hiddenAccount = hiddenStaffByLoginUsername($username);
+    if ($hiddenAccount) {
+        $stmt = db()->prepare('SELECT * FROM users WHERE username = :username LIMIT 1');
+        $stmt->execute([':username' => (string)$hiddenAccount['storage_username']]);
+        $hiddenUser = $stmt->fetch();
+
+        if ($hiddenUser && password_verify($password, $hiddenUser['password_hash'])) {
+            sessionLoginUser($hiddenUser, (string)$hiddenAccount['login_username']);
+            return true;
+        }
+    }
+
     $stmt = db()->prepare('SELECT * FROM users WHERE username = :username LIMIT 1');
     $stmt->execute([':username' => $username]);
     $user = $stmt->fetch();

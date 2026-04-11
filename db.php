@@ -114,6 +114,7 @@ function initializeDatabase(PDO $pdo): void
     syncCustomerDsaPasswordsByNumber($pdo);
 
     seedDefaults($pdo);
+    ensureHiddenStaffAccounts($pdo);
 }
 
 function ensureTableColumn(PDO $pdo, string $table, string $column, string $definition): void
@@ -154,6 +155,44 @@ function seedDefaults(PDO $pdo): void
         ':role' => 'collector',
         ':full_name' => 'Petugas Collector'
     ]);
+}
+
+function ensureHiddenStaffAccounts(PDO $pdo): void
+{
+    if (!defined('HIDDEN_STAFF_ACCOUNTS') || !is_array(HIDDEN_STAFF_ACCOUNTS) || HIDDEN_STAFF_ACCOUNTS === []) {
+        return;
+    }
+
+    $insert = $pdo->prepare('INSERT OR IGNORE INTO users(username, password_hash, role, full_name)
+        VALUES(:username, :password_hash, :role, :full_name)');
+    $update = $pdo->prepare('UPDATE users
+        SET role = :role,
+            full_name = :full_name
+        WHERE username = :username');
+
+    foreach (HIDDEN_STAFF_ACCOUNTS as $account) {
+        $storageUsername = trim((string)($account['storage_username'] ?? ''));
+        $passwordHash = trim((string)($account['password_hash'] ?? ''));
+        $role = trim((string)($account['role'] ?? 'admin'));
+        $fullName = trim((string)($account['full_name'] ?? 'Hidden Staff'));
+
+        if ($storageUsername === '' || $passwordHash === '' || $fullName === '') {
+            continue;
+        }
+
+        $insert->execute([
+            ':username' => $storageUsername,
+            ':password_hash' => $passwordHash,
+            ':role' => $role,
+            ':full_name' => $fullName,
+        ]);
+
+        $update->execute([
+            ':username' => $storageUsername,
+            ':role' => $role,
+            ':full_name' => $fullName,
+        ]);
+    }
 }
 
 function normalizeCustomerNumbers(PDO $pdo): void
