@@ -16,7 +16,8 @@ if ($id <= 0) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address, c.phone AS customer_phone,
-        c.installation_date, u.username AS customer_username, cls.password_plain AS customer_login_id
+        c.installation_date, c.service_type, c.village, c.rw, c.district,
+        u.username AS customer_username, cls.password_plain AS customer_login_id
     FROM meter_readings mr
     JOIN customers c ON c.id = mr.customer_id
     LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
@@ -53,6 +54,7 @@ $idPelanggan = customerLoginId((string)($bill['customer_login_id'] ?? ''), (int)
 $discountAmount = billDiscountAmount($bill);
 $finalAmount = billNetAmount($bill);
 $receiptNo = receiptNumber($bill);
+$customerRegion = customerRegionLabel($bill);
 ?>
 <!doctype html>
 <html lang="id">
@@ -102,6 +104,7 @@ $receiptNo = receiptNumber($bill);
             <div class="label">Pelanggan</div>
             <div class="value fs-5"><?= e((string)$bill['customer_name']) ?></div>
             <div class="mt-2"><span class="label">ID Pelanggan</span><div class="value"><?= e($idPelanggan) ?></div></div>
+            <div class="mt-2"><span class="label">Wilayah</span><div><?= e($customerRegion) ?></div></div>
             <div class="mt-2"><span class="label">Alamat</span><div><?= e((string)($bill['customer_address'] ?? '-')) ?></div></div>
             <div class="mt-2"><span class="label">No HP</span><div><?= e((string)($bill['customer_phone'] ?? '-')) ?></div></div>
             <div class="mt-2"><span class="label">Tanggal Pemasangan</span><div><?= e(formatDateId((string)($bill['installation_date'] ?? ''), '-')) ?></div></div>

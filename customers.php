@@ -87,6 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $address = trim($_POST['address'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $installationDate = normalizeDateInput($_POST['installation_date'] ?? '');
+        $serviceType = trim((string)($_POST['service_type'] ?? ''));
+        $village = trim((string)($_POST['village'] ?? ''));
+        $rw = trim((string)($_POST['rw'] ?? ''));
+        $district = trim((string)($_POST['district'] ?? ''));
+
+        if (!in_array($serviceType, ['', 'swadaya', 'distribusi'], true)) {
+            $serviceType = '';
+        }
 
         if ($name === '') {
             flash('error', 'Nama pelanggan wajib diisi.');
@@ -96,23 +104,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($id > 0) {
             $stmt = $pdo->prepare('UPDATE customers SET name = :name, address = :address, phone = :phone,
-                installation_date = :installation_date WHERE id = :id');
+                installation_date = :installation_date, service_type = :service_type,
+                village = :village, rw = :rw, district = :district WHERE id = :id');
             $stmt->execute([
                 ':name' => $name,
                 ':address' => $address,
                 ':phone' => $phone,
                 ':installation_date' => $installationDate,
+                ':service_type' => $serviceType,
+                ':village' => $village,
+                ':rw' => $rw,
+                ':district' => $district,
                 ':id' => $id,
             ]);
             flash('success', 'Data pelanggan diperbarui.');
         } else {
-            $stmt = $pdo->prepare('INSERT INTO customers(name, address, phone, installation_date)
-                VALUES(:name, :address, :phone, :installation_date)');
+            $stmt = $pdo->prepare('INSERT INTO customers(name, address, phone, installation_date, service_type, village, rw, district)
+                VALUES(:name, :address, :phone, :installation_date, :service_type, :village, :rw, :district)');
             $stmt->execute([
                 ':name' => $name,
                 ':address' => $address,
                 ':phone' => $phone,
                 ':installation_date' => $installationDate,
+                ':service_type' => $serviceType,
+                ':village' => $village,
+                ':rw' => $rw,
+                ':district' => $district,
             ]);
 
             $newCustomerId = (int)$pdo->lastInsertId();
@@ -254,6 +271,26 @@ require __DIR__ . '/includes/header.php';
         <input name="phone" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['phone'] ?? '') ?>">
       </div>
       <div>
+        <label class="text-sm">Jenis Layanan</label>
+        <select name="service_type" class="mt-1 w-full border rounded px-3 py-2">
+          <option value="">Pilih jenis layanan</option>
+          <option value="swadaya" <?= ($editCustomer['service_type'] ?? '') === 'swadaya' ? 'selected' : '' ?>>Swadaya Air</option>
+          <option value="distribusi" <?= ($editCustomer['service_type'] ?? '') === 'distribusi' ? 'selected' : '' ?>>Distribusi Air</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-sm">Desa</label>
+        <input name="village" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['village'] ?? '') ?>" placeholder="contoh: Sumbermanjing Kulon">
+      </div>
+      <div>
+        <label class="text-sm">RW</label>
+        <input name="rw" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['rw'] ?? '') ?>" placeholder="contoh: 09">
+      </div>
+      <div>
+        <label class="text-sm">Kecamatan</label>
+        <input name="district" class="mt-1 w-full border rounded px-3 py-2" value="<?= e($editCustomer['district'] ?? '') ?>" placeholder="contoh: Pagak">
+      </div>
+      <div>
         <label class="text-sm">Tanggal Pemasangan</label>
         <input type="date" name="installation_date" class="mt-1 w-full border rounded px-3 py-2" value="<?= e(dateInputValue($editCustomer['installation_date'] ?? '')) ?>">
       </div>
@@ -312,6 +349,7 @@ require __DIR__ . '/includes/header.php';
           <th class="py-2 pr-3">Nama</th>
           <th class="py-2 pr-3">Alamat</th>
           <th class="py-2 pr-3">HP</th>
+          <th class="py-2 pr-3">Wilayah</th>
           <th class="py-2 pr-3">Tgl Pasang</th>
           <th class="py-2 pr-3">Login Pelanggan</th>
           <th class="py-2 pr-3">ID Pelanggan</th>
@@ -325,6 +363,7 @@ require __DIR__ . '/includes/header.php';
           <td class="py-2 pr-3"><div class="name-cell"><?= e($c['name']) ?></div></td>
           <td class="py-2 pr-3"><div class="address-cell" title="<?= e((string)$c['address']) ?>"><?= e($c['address']) ?></div></td>
           <td class="py-2 pr-3"><?= e($c['phone']) ?></td>
+          <td class="py-2 pr-3"><div class="address-cell" title="<?= e(customerRegionLabel($c)) ?>"><?= e(customerRegionLabel($c)) ?></div></td>
           <td class="py-2 pr-3"><?= e(formatDateId((string)($c['installation_date'] ?? ''), '-')) ?></td>
           <td class="py-2 pr-3"><?= e($c['customer_username'] ?? '-') ?></td>
           <td class="py-2 pr-3">
@@ -348,7 +387,7 @@ require __DIR__ . '/includes/header.php';
         </tr>
       <?php endforeach; ?>
       <?php if (!$customers): ?>
-        <tr><td colspan="8" class="py-4 text-slate-500">Belum ada pelanggan.</td></tr>
+        <tr><td colspan="9" class="py-4 text-slate-500">Belum ada pelanggan.</td></tr>
       <?php endif; ?>
       </tbody>
     </table>

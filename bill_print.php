@@ -16,7 +16,8 @@ if ($id <= 0) {
 }
 
 $sql = 'SELECT mr.*, c.name AS customer_name, c.address AS customer_address, c.phone AS customer_phone,
-        c.installation_date, u.id AS customer_user_id, u.username AS customer_username, cls.password_plain AS customer_login_id
+        c.installation_date, c.service_type, c.village, c.rw, c.district,
+        u.id AS customer_user_id, u.username AS customer_username, cls.password_plain AS customer_login_id
     FROM meter_readings mr
     JOIN customers c ON c.id = mr.customer_id
     LEFT JOIN users u ON u.customer_id = c.id AND u.role = "customer"
@@ -63,6 +64,7 @@ $usageCharge = ((int)$bill['usage_m3']) * ((int)$bill['price_per_m3']);
 $documentNo = sprintf('INV/%04d%02d/%04d/%04d', (int)$bill['period_year'], (int)$bill['period_month'], (int)$bill['customer_id'], (int)$bill['id']);
 $isPaid = (($bill['status'] ?? '') === 'paid');
 $periodLabel = periodLabel((int)$bill['period_month'], (int)$bill['period_year']);
+$customerRegion = customerRegionLabel($bill);
 $customerLoginUsername = trim((string)($bill['customer_username'] ?? ''));
 $customerLoginPassword = $idPelanggan;
 $scheme = (!empty($_SERVER['HTTPS']) && strtolower((string)$_SERVER['HTTPS']) !== 'off') ? 'https' : 'http';
@@ -353,6 +355,7 @@ $logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-log
       <table class="meta-table">
         <tr><td>ID</td><td>: <?= e($idPelanggan) ?></td></tr>
         <tr><td>Nama</td><td>: <?= e((string)$bill['customer_name']) ?></td></tr>
+        <tr><td>Wilayah</td><td>: <?= e($customerRegion) ?></td></tr>
         <tr><td>Alamat</td><td>: <?= e((string)($bill['customer_address'] ?? '-')) ?></td></tr>
         <tr><td>No. HP</td><td>: <?= e((string)($bill['customer_phone'] ?? '-')) ?></td></tr>
         <tr><td>Jatuh Tempo</td><td>: <?= e(formatDateId((string)($bill['due_date'] ?? ''), '-')) ?></td></tr>

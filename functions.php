@@ -254,6 +254,58 @@ function customerLoginId(?string $loginId, int $customerId): string
     return $loginId !== '' ? $loginId : defaultCustomerPasswordById($customerId);
 }
 
+function customerServiceTypeLabel(?string $value): string
+{
+    $value = strtolower(trim((string)$value));
+
+    if ($value === 'swadaya') {
+        return 'Swadaya Air';
+    }
+
+    if ($value === 'distribusi') {
+        return 'Distribusi Air';
+    }
+
+    return '';
+}
+
+function customerRegionLabel(array $customer, string $fallback = '-'): string
+{
+    $serviceType = customerServiceTypeLabel($customer['service_type'] ?? '');
+    $village = trim((string)($customer['village'] ?? ''));
+    $rw = trim((string)($customer['rw'] ?? ''));
+    $district = trim((string)($customer['district'] ?? ''));
+
+    $locationParts = [];
+    if ($village !== '') {
+        $locationParts[] = 'Desa ' . $village;
+    }
+    if ($rw !== '') {
+        $locationParts[] = 'RW ' . $rw;
+    }
+    if ($district !== '') {
+        $locationParts[] = 'Kecamatan ' . $district;
+    }
+
+    $location = '';
+    if ($locationParts !== []) {
+        $location = implode(', ', $locationParts);
+        $location = str_replace(', RW ', ' RW ', $location);
+    }
+
+    if ($serviceType !== '' && $location !== '') {
+        return $serviceType . ' • ' . $location;
+    }
+    if ($serviceType !== '') {
+        return $serviceType;
+    }
+    if ($location !== '') {
+        return $location;
+    }
+
+    return $fallback;
+}
+
 function normalizeCurrencyInput($value): int
 {
     if (is_int($value)) {
