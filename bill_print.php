@@ -151,6 +151,7 @@ $logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-log
       flex-direction: column;
       gap: 10px;
       overflow: hidden;
+      max-width: 100%;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
     }
@@ -305,22 +306,56 @@ $logoUrl = $baseUrl !== '' ? $baseUrl . '/assets/app-logo.svg' : 'assets/app-log
     }
     @media print {
       @page {
-        margin: 8mm;
+        size: <?= e($paperWidthText) ?>in <?= e($paperHeightText) ?>in;
+        margin: 5mm;
+      }
+      html,
+      body {
+        width: 100%;
+        min-height: 100%;
+        background: #fff;
       }
       body {
-        background: #fff;
         padding: 0;
+        margin: 0;
       }
       .no-print {
         display: none !important;
       }
       .ticket {
         border: 0;
-        width: auto;
-        min-height: auto;
+        width: 100%;
+        max-width: 100%;
+        min-height: calc(var(--paper-height) - 10mm);
         margin: 0;
-        padding: 0;
+        padding: 5mm;
+        gap: 6px;
+        overflow: visible;
+        page-break-inside: avoid;
+        break-inside: avoid;
       }
+      .head { padding-bottom: 6px; }
+      .brand-logo { width: 90px; max-width: 22%; }
+      .brand { font-size: 22px; }
+      .brand-sub { font-size: 11px; }
+      .status { font-size: 10px; padding: 4px 8px; }
+      .grid { gap: 10px; }
+      .meta-table td,
+      .amount-table td { font-size: 11px; padding: 2px 0; }
+      .meta-table td:first-child,
+      .amount-table td:first-child { width: 92px; }
+      .amount-table tr.total td { font-size: 14px; padding-top: 5px; }
+      .access-box { grid-template-columns: 64px 1fr; gap: 8px; padding: 6px 0; }
+      .access-qr img { width: 64px; height: 64px; }
+      .access-title { font-size: 11px; margin-bottom: 2px; }
+      .access-line,
+      .access-help { font-size: 10px; line-height: 1.25; }
+      .access-note { font-size: 9px; line-height: 1.25; margin-top: 2px; }
+      .foot { grid-template-columns: 1fr 160px; gap: 10px; padding-top: 3px; }
+      .foot-note { font-size: 10px; line-height: 1.25; }
+      .doc-no { font-size: 9px; margin-top: 4px; }
+      .signature-title { font-size: 10px; margin-bottom: 26px; }
+      .signature-line { font-size: 9px; padding-top: 4px; }
     }
   </style>
 </head>
